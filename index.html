@@ -12,7 +12,6 @@
     .tab { padding:0.35rem 0.75rem; border-radius:0.75rem; cursor:pointer; font-size:0.75rem; }
     .tab-active { background:#fff; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(15,23,42,.06); }
     .chip { display:inline-flex; align-items:center; border-radius:999px; padding:0.1rem 0.5rem; font-size:0.7rem; border:1px solid #e2e8f0; background:#fff; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     .muted { color:#64748b; font-size:0.7rem; }
     .card { border-radius:1rem; border:1px solid #e2e8f0; background:#fff; }
     .card-header { padding:0.6rem 0.9rem; border-bottom:1px solid #e2e8f0; font-weight:600; font-size:0.9rem; }
@@ -22,15 +21,18 @@
     .select { border-radius:0.55rem; border:1px solid #e2e8f0; padding:0.25rem 0.5rem; font-size:0.8rem; width:100%; }
     th, td { padding:0.2rem 0.4rem; }
   </style>
+  <!-- jsPDF für PDF-Export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 <div id="root"></div>
 
+<!-- React -->
 <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
 <script>
+/* ---------- PDF Helfer ---------- */
 function getJsPDF(){
   const g = window.jspdf || window.jsPDF || {};
   return g.jsPDF || g;
@@ -73,9 +75,11 @@ function exportArbeitsplanPdf(rows, fields, sortLabel, von, bis){
   doc.text("Tabellarische Liste – Arbeitspläne", 10, 12);
   doc.setFontSize(10);
   doc.text("Zeitraum: " + (von||"-") + " bis " + (bis||"-") + "    Sortierung: " + sortLabel, 10, 18);
+
   let y = 26;
   const xVom = 10, xBis = 32, xTermin = 54;
   const xNummer = 94, xArt = 122, xStall = 142, xGruppe = 168;
+
   doc.text("Vom", xVom, y);
   doc.text("Bis", xBis, y);
   doc.text("Termin", xTermin, y);
@@ -84,6 +88,7 @@ function exportArbeitsplanPdf(rows, fields, sortLabel, von, bis){
   if(fields.stallnr) doc.text("Stallnr", xStall, y);
   if(fields.gruppe) doc.text("Gruppe", xGruppe, y);
   y += 6;
+
   rows.forEach(function(r){
     if(y > 280){ doc.addPage(); y = 10; }
     doc.text(r.vom || "", xVom, y);
@@ -95,14 +100,19 @@ function exportArbeitsplanPdf(rows, fields, sortLabel, von, bis){
     if(fields.gruppe) doc.text(r.gruppe || "", xGruppe, y);
     y += 5;
   });
+
   doc.save("arbeitsplan_tabellarische_liste.pdf");
 }
 
-const { useState, useMemo } = React;
+/* ---------- App-Konstanten ---------- */
+const { useState, useMemo, useEffect } = React;
+const STORAGE_KEY = "seifisau_tiere_v1";
+
 const ART = { SAU: "Sau", EBER: "Eber" };
 const STATUS = { TRAGEND: "Tragend", SAEUGEND: "Säugend", GUEST: "Güst" };
 const FIX_EBER_NAME = "E-1";
 
+/* Hilfsfunktionen */
 function uid(){ return Math.random().toString(36).slice(2,9); }
 function today(){ return new Date().toISOString().slice(0,10); }
 function addDaysStr(d, days){
@@ -111,6 +121,7 @@ function addDaysStr(d, days){
   return dt.toISOString().slice(0,10);
 }
 
+/* Demo-Bestand */
 function initialAnimals(){
   const list = [];
   list.push({
@@ -172,8 +183,30 @@ function latestRefDate(t, bezug){
   return null;
 }
 
+/* ---------- Haupt-App ---------- */
 function App(){
-  const [tiere,setTiere] = useState(initialAnimals());
+  // Tiere beim Start laden: zuerst aus localStorage, sonst Demo-Bestand
+  const [tiere,setTiere] = useState(() => {
+    try{
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if(stored){
+        return JSON.parse(stored);
+      }
+    }catch(e){
+      console.error("Konnte gespeicherte Daten nicht laden:", e);
+    }
+    return initialAnimals();
+  });
+
+  // Alle Änderungen automatisch im Browser speichern
+  useEffect(() => {
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tiere));
+    }catch(e){
+      console.error("Konnte Daten nicht speichern:", e);
+    }
+  }, [tiere]);
+
   const [markiert,setMarkiert] = useState([]);
   const [tab,setTab] = useState("bewegungen");
   const [filter,setFilter] = useState({art:"alle", bestand:"alle"});
@@ -321,8 +354,6 @@ function App(){
     setAnimalDialog({open:false,mode:"new",tier:null});
   }
 
-  const gefiltertMitMark = gefiltert; // nur alias
-
   function exportJson(){
     const blob = new Blob([JSON.stringify({tiere},null,2)],{type:"application/json"});
     const url = URL.createObjectURL(blob);
@@ -331,7 +362,17 @@ function App(){
     URL.revokeObjectURL(url);
   }
 
+  function resetData(){
+    if(!confirm("Wirklich alle Daten löschen und mit Demo-Bestand neu starten?")) return;
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+    setTiere(initialAnimals());
+    setMarkiert([]);
+  }
+
+  const gefiltertMitMark = gefiltert;
+
   return React.createElement("div",{className:"min-h-screen"},
+    /* Kopf */
     React.createElement("div",{className:"border-b bg-white"},
       React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-2 flex items-center justify-between text-sm"},
         React.createElement("div",{className:"flex items-center gap-2"},
@@ -348,6 +389,7 @@ function App(){
         )
       )
     ),
+    /* Hauptnavigation */
     React.createElement("div",{className:"border-b bg-white/70"},
       React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-3 grid grid-cols-2 md:grid-cols-8 gap-2"},
         ["Neue Tiere","Bewegungen","Infobericht","Buchungen","Arbeitspläne","Bestände","Statistik","Wartezeiten"].map((l) =>
@@ -368,6 +410,7 @@ function App(){
         )
       )
     ),
+    /* Filterleiste */
     React.createElement("div",{className:"border-b bg-white"},
       React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center gap-3"},
         React.createElement("div",{className:"flex items-center gap-2 text-sm"},
@@ -390,7 +433,9 @@ function App(){
         )
       )
     ),
+    /* Hauptbereich */
     React.createElement("div",{className:"mx-auto max-w-7xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4"},
+      /* Tierliste */
       React.createElement("div",{className:"md:col-span-1 card"},
         React.createElement("div",{className:"card-header flex justify-between items-center"},
           React.createElement("span",null,"Tierliste (",gefiltertMitMark.length,")"),
@@ -413,6 +458,7 @@ function App(){
           )
         )
       ),
+      /* Rechts: Tabs */
       React.createElement("div",{className:"md:col-span-2 card"},
         React.createElement("div",{className:"card-header"},"Bewegungsdaten & Auswertungen"),
         React.createElement("div",{className:"card-body"},
@@ -430,6 +476,7 @@ function App(){
         )
       )
     ),
+    /* Fußzeile */
     React.createElement("div",{className:"sticky bottom-0 bg-white border-t"},
       React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-2 text-sm flex items-center gap-4"},
         React.createElement("div",null,"Bestand gesamt: ",React.createElement("b",null,stats.anzahl)),
@@ -438,7 +485,8 @@ function App(){
           React.createElement("span",null,"Eber: ",stats.byArt[ART.EBER]||0)
         ),
         React.createElement("div",{className:"ml-auto flex items-center gap-2"},
-          React.createElement("button",{className:"btn",onClick:exportJson},"Export")
+          React.createElement("button",{className:"btn",onClick:exportJson},"Export"),
+          React.createElement("button",{className:"btn",onClick:resetData},"Daten zurücksetzen")
         )
       )
     ),
@@ -453,9 +501,11 @@ function App(){
   );
 }
 
+/* ---------- Bewegungen ---------- */
 function MovementEntry({markiert,setTiere}){
   const [art,setArt] = useState("Belegung");
   const [form,setForm] = useState({ datum:today(), deckart:"Natursprung", eberName:FIX_EBER_NAME, eberNr:FIX_EBER_NAME });
+
   function setF(key,val){
     setForm(prev=>{
       const next = {...prev,[key]:val};
@@ -472,6 +522,7 @@ function MovementEntry({markiert,setTiere}){
       return next;
     });
   }
+
   function apply(mut){
     if(markiert.length===0) return;
     setTiere(prev=>prev.map(t=>{
@@ -481,6 +532,7 @@ function MovementEntry({markiert,setTiere}){
       return copy;
     }));
   }
+
   function save(){
     if(art==="Zukauf"){
       apply(t=>t.bewegungen.zukauf.push({datum:form.datum, herkunft:form.herkunft||"", statusBeimZukauf:form.statusBeimZukauf||"Jungsau", belegdatum:form.belegdatum||"", eberName:form.eberName||"", eberNr:form.eberNr||"" }));
@@ -505,7 +557,9 @@ function MovementEntry({markiert,setTiere}){
     }
     setForm(f=>({...f, datum:today()}));
   }
+
   const natursprung = form.deckart==="Natursprung";
+
   return React.createElement("div",{className:"grid md:grid-cols-5 gap-4"},
     React.createElement("div",{className:"md:col-span-2"},
       React.createElement("div",{className:"card"},
@@ -531,6 +585,7 @@ function MovementEntry({markiert,setTiere}){
             React.createElement("label",{className:"muted"},"Datum"),
             React.createElement("input",{type:"date",className:"input",value:form.datum||"",onChange:e=>setF("datum",e.target.value)})
           ),
+
           art==="Belegung" && [
             React.createElement("div",{key:"anz"},
               React.createElement("label",{className:"muted"},"Anzahl Deckungen"),
@@ -553,6 +608,7 @@ function MovementEntry({markiert,setTiere}){
               )
             )
           ],
+
           art==="Zukauf" && [
             React.createElement("div",{key:"herk"},
               React.createElement("label",{className:"muted"},"Herkunft/Züchter"),
@@ -575,6 +631,7 @@ function MovementEntry({markiert,setTiere}){
               React.createElement("input",{className:"input",placeholder:"Nummer",value:form.eberNr||"",onChange:e=>setF("eberNr",e.target.value)})
             )
           ],
+
           art==="Trächtigkeitsprüfung" && [
             React.createElement("div",{key:"erg"},
               React.createElement("label",{className:"muted"},"Ergebnis"),
@@ -592,6 +649,7 @@ function MovementEntry({markiert,setTiere}){
               React.createElement("input",{className:"input",placeholder:"Optional",value:form.kommentar||"",onChange:e=>setF("kommentar",e.target.value)})
             )
           ],
+
           art==="Stallwechsel" && React.createElement("div",{className:"col-span-2"},
             React.createElement("label",{className:"muted"},"Zielstall"),
             React.createElement("select",{className:"select",value:form.ziel||"Wartestall",onChange:e=>setF("ziel",e.target.value)},
@@ -600,6 +658,7 @@ function MovementEntry({markiert,setTiere}){
               React.createElement("option",{value:"Abferkelstall"},"Abferkelstall")
             )
           ),
+
           art==="Ferkelung" && [
             React.createElement("div",{key:"leb"},
               React.createElement("label",{className:"muted"},"Ferkel lebend"),
@@ -614,6 +673,7 @@ function MovementEntry({markiert,setTiere}){
               React.createElement("input",{type:"number",className:"input",value:form.mumifiziert||0,onChange:e=>setF("mumifiziert",e.target.value)})
             )
           ],
+
           art==="Ferkelbehandlung" && [
             React.createElement("div",{key:"typ",className:"col-span-2"},
               React.createElement("label",{className:"muted"},"Behandlungstyp (frei eingeben)"),
@@ -624,10 +684,12 @@ function MovementEntry({markiert,setTiere}){
               React.createElement("input",{className:"input",placeholder:"z. B. Präparat, Dosis, Bemerkungen",value:form.details||"",onChange:e=>setF("details",e.target.value)})
             )
           ],
+
           art==="Absetzen" && React.createElement("div",{className:"col-span-2"},
             React.createElement("label",{className:"muted"},"Abgesetzte Ferkel"),
             React.createElement("input",{type:"number",className:"input",value:form.anzahlAbgesetzt||0,onChange:e=>setF("anzahlAbgesetzt",e.target.value)})
           ),
+
           React.createElement("div",{className:"col-span-2"},
             React.createElement("label",{className:"muted"},"Kommentar"),
             React.createElement("input",{className:"input",placeholder:"Optional",value:form.kommentar||"",onChange:e=>setF("kommentar",e.target.value)})
@@ -643,6 +705,7 @@ function MovementEntry({markiert,setTiere}){
   );
 }
 
+/* ---------- Arbeitspläne ---------- */
 function Arbeitsplan({tiere}){
   const PLAENE = [
     {key:"Absetzung", bezug:"Ferkelung", von:28, bis:30},
@@ -650,6 +713,7 @@ function Arbeitsplan({tiere}){
     {key:"Ferkelung", bezug:"Belegung", von:115, bis:118},
     {key:"Trächtigkeitskontr.", bezug:"Belegung", von:21, bis:24}
   ];
+
   const [von,setVon] = useState(today());
   const [wochen,setWochen] = useState(1);
   const [bis,setBis] = useState(addDaysStr(today(),7*1-1));
@@ -658,10 +722,12 @@ function Arbeitsplan({tiere}){
   const [sort,setSort] = useState("nummer");
   const [nurSauen,setNurSauen] = useState(true);
   const [wartezeit,setWartezeit] = useState(false);
+
   function updateBis(newVon,newWo){ setBis(addDaysStr(newVon, newWo*7-1)); }
   function onVonChange(v){ setVon(v); updateBis(v,wochen); }
   function setWeeks(w){ setWochen(w); updateBis(von,w); }
   function setAllPlaene(val){ const obj={}; PLAENE.forEach(p=>obj[p.key]=val); setSelPlaene(obj); }
+
   const termine = useMemo(()=>{
     if(!von || !bis) return [];
     const vonDt = new Date(von);
@@ -700,8 +766,10 @@ function Arbeitsplan({tiere}){
     });
     return rows;
   },[tiere,von,bis,selPlaene,sort,nurSauen]);
+
   const sortLabelMap = {nummer:"Nummer",art_nummer:"Art und Nummer",stallnr_nummer:"Stallnr und Nummer",gruppe_nummer:"Gruppe und Nummer"};
   const vorschau = termine.slice(0,40);
+
   return React.createElement("div",{className:"grid md:grid-cols-5 gap-4"},
     React.createElement("div",{className:"md:col-span-2 card"},
       React.createElement("div",{className:"card-header"},"Arbeitspläne berechnen"),
@@ -816,6 +884,7 @@ function Arbeitsplan({tiere}){
   );
 }
 
+/* ---------- Status / Bestände / Statistik / Wartezeiten ---------- */
 function StatusTabs({tiere}){
   const [reg,setReg] = useState("TRAGEND");
   const map = {TRAGEND:"Tragend",SAEUGEND:"Säugend",GUEST:"Güst"};
@@ -972,6 +1041,7 @@ function Wartezeiten({tiere}){
   );
 }
 
+/* ---------- Tier-Dialog ---------- */
 function AnimalDialog(props){
   const {animalForm,setAnimalForm,animalDialog,onSave,onClose,tiere} = props;
   function setF(key,val){ setAnimalForm(prev=>({...prev,[key]:val})); }
@@ -1123,8 +1193,10 @@ function AnimalDialog(props){
   );
 }
 
+/* ---------- App mounten ---------- */
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(React.createElement(App));
 </script>
 </body>
 </html>
+
