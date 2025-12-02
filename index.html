@@ -362,6 +362,49 @@ function App(){
     URL.revokeObjectURL(url);
   }
 
+  // <<< NEU: JSON-Import >>>
+  function importJson(){
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+
+    input.onchange = (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const text = ev.target.result;
+          const data = JSON.parse(text);
+
+          let neueTiere;
+          // Unterstützt sowohl { "tiere": [...] } als auch direkt ein Array [...]
+          if (Array.isArray(data)) {
+            neueTiere = data;
+          } else if (data && Array.isArray(data.tiere)) {
+            neueTiere = data.tiere;
+          } else {
+            alert("Die Datei hat kein gültiges SeifiSau-Format.");
+            return;
+          }
+
+          setTiere(neueTiere);
+          setMarkiert([]);
+          alert("Bestand wurde erfolgreich aus der Datei geladen.");
+        } catch (err) {
+          console.error("Fehler beim Import:", err);
+          alert("Die Datei konnte nicht gelesen werden (ungültiges JSON?).");
+        }
+      };
+
+      reader.readAsText(file, "utf-8");
+    };
+
+    input.click();
+  }
+  // >>> ENDE NEU
+
   function resetData(){
     if(!confirm("Wirklich alle Daten löschen und mit Demo-Bestand neu starten?")) return;
     try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
@@ -486,6 +529,7 @@ function App(){
         ),
         React.createElement("div",{className:"ml-auto flex items-center gap-2"},
           React.createElement("button",{className:"btn",onClick:exportJson},"Export"),
+          React.createElement("button",{className:"btn",onClick:importJson},"Import"),
           React.createElement("button",{className:"btn",onClick:resetData},"Daten zurücksetzen")
         )
       )
@@ -1199,4 +1243,5 @@ root.render(React.createElement(App));
 </script>
 </body>
 </html>
+
 
