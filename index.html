@@ -7,15 +7,35 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { background-color:#f8fafc; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    .btn { display:inline-flex; align-items:center; gap:0.25rem; border-radius:0.75rem; padding:0.35rem 0.75rem; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(15,23,42,.06); background:#fff; font-size:0.8rem; }
-    .btn:hover { box-shadow:0 4px 10px rgba(15,23,42,.08); }
-    .tab { padding:0.35rem 0.75rem; border-radius:0.75rem; cursor:pointer; font-size:0.75rem; }
-    .tab-active { background:#fff; border:1px solid #e2e8f0; box-shadow:0 1px 2px rgba(15,23,42,.06); }
-    .chip { display:inline-flex; align-items:center; border-radius:999px; padding:0.1rem 0.5rem; font-size:0.7rem; border:1px solid #e2e8f0; background:#fff; }
+    .btn { display:inline-flex; align-items:center; gap:0.25rem; border-radius:9999px; border:1px solid #e2e8f0; padding:0.25rem 0.75rem; background:#0f172a; color:#f9fafb; font-size:0.8rem; box-shadow:0 1px 2px rgba(15,23,42,.06); }
+    .btn.secondary { background:#fff; color:#0f172a; }
+    .btn.danger { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
+    .btn-icon { display:inline-flex; align-items:center; justify-content:center; width:1.75rem; height:1.75rem; border-radius:9999px; border:1px solid #e2e8f0; background:#fff; font-size:0.8rem; }
+    .btn-ghost { display:inline-flex; align-items:center; gap:0.25rem; padding:0.25rem 0.5rem; border-radius:9999px; border:1px solid transparent; background:transparent; font-size:0.8rem; color:#0f172a; }
+    .btn-ghost:hover { border-color:#e2e8f0; background:#f8fafc; }
+    .pill { display:inline-flex; align-items:center; gap:0.25rem; border-radius:9999px; padding:0.1rem 0.5rem; font-size:0.7rem; border:1px solid #e2e8f0; background:#fff; }
+    .pill-muted { background:#f1f5f9; color:#64748b; }
+    .pill-badge { background:#0f172a; color:#f9fafb; border-color:#0f172a; }
+    .pill-warning { background:#fef9c3; color:#854d0e; border-color:#facc15; }
+    .pill-danger { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
+    .pill-outline { background:transparent; border-style:dashed; }
+    .badge { display:inline-flex; align-items:center; justify-content:center; min-width:1.2rem; height:1.2rem; border-radius:9999px; background:#0f172a; color:#f9fafb; font-size:0.65rem; }
+    .chip { display:inline-flex; align-items:center; gap:0.25rem; border-radius:9999px; padding:0.1rem 0.5rem; font-size:0.7rem; border:1px solid #e2e8f0; background:#fff; }
     .muted { color:#64748b; font-size:0.7rem; }
     .card { border-radius:1rem; border:1px solid #e2e8f0; background:#fff; }
-    .card-header { padding:0.6rem 0.9rem; border-bottom:1px solid #e2e8f0; font-weight:600; font-size:0.9rem; }
-    .card-body { padding:0.75rem; font-size:0.8rem; }
+    .card-soft { border-radius:1rem; border:1px dashed #e2e8f0; background:#f8fafc; }
+    .hstack { display:flex; align-items:center; gap:0.35rem; }
+    .vstack { display:flex; flex-direction:column; gap:0.2rem; }
+    .divider { border-top:1px dashed #e2e8f0; margin:0.5rem 0; }
+    .shadow-soft { box-shadow:0 1px 2px rgba(15,23,42,.06); }
+    .shadow-soft-lg { box-shadow:0 10px 25px rgba(15,23,42,.06); }
+    .gradient-bar { height:4px; border-radius:9999px; background:linear-gradient(to right,#0f172a,#22c55e); }
+    .timeline-dot { width:0.5rem; height:0.5rem; border-radius:9999px; background:#0f172a; box-shadow:0 0 0 3px rgba(15,23,42,.1); }
+    .timeline-line { position:absolute; left:0.25rem; top:0; bottom:0; width:1px; background:linear-gradient(to bottom,#e2e8f0,transparent); }
+    .badge-pill { border-radius:9999px; border:1px solid #e2e8f0; padding:0.1rem 0.4rem; font-size:0.65rem; background:#f8fafc; }
+    .badge-pill-strong { background:#0f172a; color:#f9fafb; border-color:#0f172a; }
+    .table-header { font-size:0.7rem; text-transform:uppercase; letter-spacing:.08em; color:#64748b; }
+    .table-cell { font-size:0.8rem; }
     .input { border-radius:0.55rem; border:1px solid #e2e8f0; padding:0.25rem 0.5rem; font-size:0.8rem; width:100%; }
     .input:disabled { background:#f8fafc; color:#64748b; }
     .select { border-radius:0.55rem; border:1px solid #e2e8f0; padding:0.25rem 0.5rem; font-size:0.8rem; width:100%; }
@@ -27,163 +47,506 @@
 <body>
 <div id="root"></div>
 
+
 <!-- React -->
 <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-<script>
-/* ---------- PDF Helfer ---------- */
-function getJsPDF(){
-  const g = window.jspdf || window.jsPDF || {};
-  return g.jsPDF || g;
+<script type="text/babel">
+
+const { useState, useEffect, useMemo } = React;
+
+
+// Konstante für LocalStorage-Key
+const STORAGE_KEY = "seifisau_bestand";
+
+
+// Hilfsfunktionen
+function parseDate(dateStr){
+  if(!dateStr) return null;
+  const [y,m,d] = dateStr.split("-").map(Number);
+  return new Date(y,m-1,d);
+}
+function formatDate(date){
+  if(!date) return "";
+  const d = new Date(date);
+  const pad = (x)=>String(x).padStart(2,"0");
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+}
+function diffDays(a,b){
+  const ONE_DAY = 24*60*60*1000;
+  return Math.round((b-a)/ONE_DAY);
+}
+function todayStr(){
+  return formatDate(new Date());
+}
+function round1(v){
+  if(v===null || v===undefined || isNaN(v)) return null;
+  return Math.round(v*10)/10;
 }
 
-function exportFerkelbehandlungPdf(rows){
-  const jsPDF = getJsPDF();
-  if(!jsPDF){ alert("PDF-Bibliothek nicht geladen."); return; }
-  const doc = new jsPDF();
-  doc.setFontSize(14);
-  doc.text("Auswertung Ferkelbehandlungen", 10, 12);
-  doc.setFontSize(10);
-  let y = 20;
-  doc.text("Datum   Sau   Behandlungstyp", 10, y);
-  y += 6;
-  rows.forEach(function(r){
-    if(y > 280){ doc.addPage(); y = 10; }
-    const line = (r.datum||"") + "   " + (r.sau||"") + "   " + (r.typ||"");
-    doc.text(line, 10, y);
-    y += 4;
-    if(r.detailsText){
-      const txt = "Details: " + r.detailsText;
-      const split = doc.splitTextToSize(txt, 180);
-      split.forEach(function(part){
-        if(y > 280){ doc.addPage(); y = 10; }
-        doc.text(part, 12, y);
-        y += 4;
-      });
-    }
-    y += 2;
-  });
-  doc.save("ferkelbehandlungen.pdf");
-}
 
-function exportArbeitsplanPdf(rows, fields, sortLabel, von, bis){
-  const jsPDF = getJsPDF();
-  if(!jsPDF){ alert("PDF-Bibliothek nicht geladen."); return; }
-  const doc = new jsPDF("p","mm","a4");
-  doc.setFontSize(14);
-  doc.text("Tabellarische Liste – Arbeitspläne", 10, 12);
-  doc.setFontSize(10);
-  doc.text("Zeitraum: " + (von||"-") + " bis " + (bis||"-") + "    Sortierung: " + sortLabel, 10, 18);
+// Tier-Typen
+const ART = {
+  SAU: "Sau",
+  EBER: "Eber",
+  FERKEL: "Ferkel"
+};
+const STATUS = {
+  AKTIV: "aktiv",
+  ABGANG: "abgang",
+  TOT: "tot",
+  VERKAUFT: "verkauft"
+};
+const GEBURTSGRUND = {
+  WURF: "Wurf",
+  ZUKAUF: "Zukauf",
+  UEBERNOMMEN: "Übernommen"
+};
 
-  let y = 26;
-  const xVom = 10, xBis = 32, xTermin = 54;
-  const xNummer = 94, xArt = 122, xStall = 142, xGruppe = 168;
 
-  doc.text("Vom", xVom, y);
-  doc.text("Bis", xBis, y);
-  doc.text("Termin", xTermin, y);
-  if(fields.nummer) doc.text("Nummer", xNummer, y);
-  if(fields.art) doc.text("Art", xArt, y);
-  if(fields.stallnr) doc.text("Stallnr", xStall, y);
-  if(fields.gruppe) doc.text("Gruppe", xGruppe, y);
-  y += 6;
-
-  rows.forEach(function(r){
-    if(y > 280){ doc.addPage(); y = 10; }
-    doc.text(r.vom || "", xVom, y);
-    doc.text(r.bis || "", xBis, y);
-    doc.text(r.termin || "", xTermin, y);
-    if(fields.nummer) doc.text(String(r.nummer||""), xNummer, y);
-    if(fields.art) doc.text(r.art || "", xArt, y);
-    if(fields.stallnr) doc.text(String(r.stallnr||""), xStall, y);
-    if(fields.gruppe) doc.text(r.gruppe || "", xGruppe, y);
-    y += 5;
-  });
-
-  doc.save("arbeitsplan_tabellarische_liste.pdf");
-}
-
-/* ---------- App-Konstanten ---------- */
-const { useState, useMemo, useEffect } = React;
-const STORAGE_KEY = "seifisau_tiere_v1";
-
-const ART = { SAU: "Sau", EBER: "Eber" };
-const STATUS = { TRAGEND: "Tragend", SAEUGEND: "Säugend", GUEST: "Güst" };
-const FIX_EBER_NAME = "E-1";
-
-/* Hilfsfunktionen */
-function uid(){ return Math.random().toString(36).slice(2,9); }
-function today(){ return new Date().toISOString().slice(0,10); }
-function addDaysStr(d, days){
-  const dt = new Date(d);
-  dt.setDate(dt.getDate()+days);
-  return dt.toISOString().slice(0,10);
-}
-
-/* Demo-Bestand */
+// Beispiel-Bestand
 function initialAnimals(){
-  const list = [];
-  list.push({
-    id:uid(),
-    art:ART.EBER,
-    nummer:FIX_EBER_NAME,
-    gruppe:"Eber",
-    stallnr:"1",
-    rasse:"Pi",
-    geburtsdatum:"2024-01-01",
-    abgangsdatum:null,
-    status:STATUS.GUEST,
-    ohrmarke:"E-1",
-    taetowierung:"",
-    bemerkungen:"Deck-Eber",
-    zugang:{datum:"2024-01-15",gewicht:"220",preis:"0",grund:"Eigenbetrieb",lieferant:""},
-    abgang:null,
-    statusIgnorieren:false,
-    bewegungen:{ zukauf:[], belegungen:[], traechPruefungen:[], stallwechsel:[], ferkelungen:[], ferkelBehandlungen:[], absetzungen:[] }
-  });
-  for(let i=0;i<8;i++){
-    list.push({
-      id:uid(),
-      art:ART.SAU,
-      nummer:String(1000+i),
-      gruppe:"Zuchtsau",
-      stallnr:String(1+(i%5)),
-      rasse:"F1",
-      geburtsdatum:new Date(2023,(i%12),1+(i%20)).toISOString().slice(0,10),
-      abgangsdatum:null,
-      status:STATUS.GUEST,
-      ohrmarke:String(300+i),
-      taetowierung:"",
-      bemerkungen:"Demo-Sau",
-      zugang:{datum:"2024-08-15",gewicht:"140",preis:"300",grund:"Zukauf",lieferant:"Burstaller"},
-      abgang:null,
-      statusIgnorieren:false,
-      bewegungen:{ zukauf:[], belegungen:[], traechPruefungen:[], stallwechsel:[], ferkelungen:[], ferkelBehandlungen:[], absetzungen:[] }
-    });
-  }
-  const sau = list.find(t=>t.art===ART.SAU);
-  if(sau){
-    const beleg = today();
-    sau.bewegungen.belegungen.push({datum:beleg, anzahl:1, art:"Natursprung", eberName:FIX_EBER_NAME, eberNr:FIX_EBER_NAME});
-    const ferk = addDaysStr(beleg,115);
-    sau.bewegungen.ferkelungen.push({datum:ferk, lebend:12, tot:0, mumifiziert:0});
-    const abs = addDaysStr(ferk,28);
-    sau.bewegungen.absetzungen.push({datum:abs, anzahl:12});
-  }
-  return list;
+  const today = todayStr();
+  return [
+    {
+      id: "S-001",
+      name: "Lotte",
+      art: ART.SAU,
+      geburtsdatum: "2023-03-15",
+      abstammung: "Landrasse × Pietrain",
+      herkunft: "Eigenzucht",
+      gewichtStart: 120,
+      status: STATUS.AKTIV,
+      stall: "Box 3",
+      gruppe: "Deckgruppe",
+      notizen: "Ruhige Sau, gute Klauen",
+      wurfausfaelle: [
+        { datum:"2023-09-20", lebend:12, tot:1, abgesetzt:11, bemerkung:"Sehr guter Wurf" }
+      ],
+      behandlungen: [
+        { datum:"2023-10-10", mittel:"Impfung Parvo", dosis:"2 ml", grund:"Impfplan", ta:"Dr. Huber" }
+      ]
+    },
+    {
+      id: "E-010",
+      name: "Bruno",
+      art: ART.EBER,
+      geburtsdatum: "2022-11-05",
+      abstammung: "DU × Pi",
+      herkunft: "Zukauf Besamungsstation",
+      gewichtStart: 180,
+      status: STATUS.AKTIV,
+      stall: "Eberbucht 1",
+      gruppe: "Eber",
+      notizen: "Sehr agil, gute Libido",
+      wurfausfaelle: [],
+      behandlungen: [
+        { datum:"2023-08-01", mittel:"Entwurmung", dosis:"nach KG", grund:"Bestandsbehandlung", ta:"Dr. Maier" }
+      ]
+    },
+    {
+      id: "F-045",
+      name: "Fritz",
+      art: ART.FERKEL,
+      geburtsdatum: today,
+      abstammung: "Lotte × Bruno",
+      herkunft: "Eigenzucht",
+      gewichtStart: 1.4,
+      status: STATUS.AKTIV,
+      stall: "Ferkelabteil 1",
+      gruppe: "Wurf Lotte 2023-09",
+      notizen: "Etwas kleiner, aber fit",
+      wurfausfaelle: [],
+      behandlungen: []
+    }
+  ];
 }
 
-function latestRefDate(t, bezug){
-  const b = t.bewegungen;
-  const pickLast=(arr,key)=>arr && arr.length? new Date(arr[arr.length-1][key]):null;
-  if(bezug==="Absetzen") return pickLast(b.absetzungen,"datum");
-  if(bezug==="Belegung") return pickLast(b.belegungen,"datum");
-  if(bezug==="Ferkelung") return pickLast(b.ferkelungen,"datum");
-  return null;
+
+
+// Komponente: Badge
+function Badge({children,variant="default"}){
+  let cls = "badge-pill";
+  if(variant==="strong") cls += " badge-pill-strong";
+  if(variant==="warn") cls += " pill-warning";
+  if(variant==="danger") cls += " pill-danger";
+  return React.createElement("span",{className:cls},children);
 }
 
-/* ---------- Haupt-App ---------- */
+
+// Komponente: Pill
+function Pill({children,variant="default"}){
+  let cls = "pill";
+  if(variant==="muted") cls += " pill-muted";
+  if(variant==="warn") cls += " pill-warning";
+  if(variant==="danger") cls += " pill-danger";
+  if(variant==="outline") cls += " pill-outline";
+  return React.createElement("span",{className:cls},children);
+}
+
+
+// Komponente: Status-Badge
+function StatusBadge({tier}){
+  if(tier.statusIgnorieren){
+    return React.createElement(Pill,{variant:"muted"},"Ignoriert");
+  }
+  if(tier.status===STATUS.ABGANG){
+    return React.createElement(Pill,{variant:"danger"},"Abgang");
+  }
+  if(tier.status===STATUS.TOT){
+    return React.createElement(Pill,{variant:"danger"},"Verendet");
+  }
+  if(tier.status===STATUS.VERKAUFT){
+    return React.createElement(Pill,{variant:"outline"},"Verkauft");
+  }
+  return React.createElement(Pill,null,"Aktiv");
+}
+
+
+// Komponente: Art-Tag
+function ArtTag({art}){
+  let label = art || "?";
+  let variant = "muted";
+  if(art===ART.SAU) variant = "default";
+  if(art===ART.EBER) variant = "outline";
+  if(art===ART.FERKEL) variant = "muted";
+  return React.createElement(Pill,{variant},label);
+}
+
+
+// Komponente: Timeline-Punkt
+function TimelineItem({date,label,sub}){
+  return React.createElement("div",{className:"relative pl-4 pb-2 text-xs"},
+    React.createElement("div",{className:"timeline-line"}),
+    React.createElement("div",{className:"timeline-dot"}),
+    React.createElement("div",{className:"ml-4"},
+      React.createElement("div",{className:"font-medium"},label),
+      date && React.createElement("div",{className:"muted"},date),
+      sub && React.createElement("div",{className:"text-[0.65rem] text-slate-600 mt-0.5"},sub)
+    )
+  );
+}
+
+
+// Komponente: Tierkarte
+function AnimalCard({tier,selected,onToggleSelect,onOpen,markiert}){
+  const geburtsDatum = tier.geburtsdatum ? parseDate(tier.geburtsdatum) : null;
+  const alterTage = geburtsDatum ? diffDays(geburtsDatum,new Date()) : null;
+  const alterText = alterTage!==null ? (alterTage<60 ? alterTage+" Tage" : (Math.round(alterTage/30.4)+" Monate")) : "–";
+
+  const letzteWurf = tier.wurfausfaelle && tier.wurfausfaelle.length>0
+    ? tier.wurfausfaelle[tier.wurfausfaelle.length-1]
+    : null;
+
+  const titelZeile = tier.name || tier.id || "Unbenannt";
+
+  return React.createElement("div",{
+      className:
+        "card shadow-soft px-3 py-2 sm:px-3 sm:py-3 flex gap-2 cursor-pointer hover:shadow-soft-lg transition-shadow "+
+        (selected ? "ring-2 ring-slate-900/70" : "")
+    },
+    React.createElement("div",{className:"flex flex-col items-center gap-1 pr-2"},
+      React.createElement("button",{
+        className:"btn-icon",
+        onClick:(e)=>{
+          e.stopPropagation();
+          onToggleSelect();
+        }
+      }, selected ? "✓" : "○"),
+      React.createElement("span",{className:"text-[0.6rem] text-slate-500"}, tier.id || "–")
+    ),
+    React.createElement("div",{className:"flex-1 flex flex-col gap-1",onClick:onOpen},
+      React.createElement("div",{className:"flex items-start gap-2"},
+        React.createElement("div",{className:"flex-1"},
+          React.createElement("div",{className:"flex items-center gap-2"},
+            React.createElement("span",{className:"font-semibold text-sm text-slate-900"},titelZeile),
+            React.createElement(ArtTag,{art:tier.art}),
+            React.createElement(StatusBadge,{tier})
+          ),
+          React.createElement("div",{className:"flex flex-wrap gap-2 mt-0.5"},
+            tier.abstammung && React.createElement(Pill,{variant:"muted"},tier.abstammung),
+            tier.herkunft && React.createElement(Pill,{variant:"muted"},"Herkunft: ",tier.herkunft),
+            tier.gruppe && React.createElement(Pill,{variant:"muted"},"Gruppe: ",tier.gruppe)
+          )
+        ),
+        React.createElement("div",{className:"text-right text-[0.7rem] text-slate-600 min-w-[5.5rem]"},
+          tier.gewichtStart ? React.createElement("div",null,"Start: ",tier.gewichtStart," kg") : null,
+          geburtsDatum && React.createElement("div",null,"geb. ",tier.geburtsdatum),
+          alterTage!==null && React.createElement("div",{className:"muted"},"Alter: ",alterText)
+        )
+      ),
+      React.createElement("div",{className:"mt-2 flex items-center gap-3 text-[0.7rem]"},
+        letzteWurf ? React.createElement("div",{className:"flex items-center gap-1"},
+          React.createElement("span",{className:"font-medium"},"Letzter Wurf:"),
+          React.createElement("span",null,letzteWurf.lebend," lebend / ",letzteWurf.abgesetzt," abgesetzt")
+        ) : React.createElement("div",{className:"muted"},"Bisher kein Wurf erfasst"),
+        React.createElement("div",{className:"ml-auto flex items-center gap-1"},
+          tier.behandlungen && tier.behandlungen.length>0
+            ? React.createElement(Pill,{variant:"muted"},
+                "Behandlungen: ",tier.behandlungen.length
+              )
+            : React.createElement(Pill,{variant:"outline"},"Keine Behandlungen"),
+          tier.notizen ? React.createElement("span",{className:"muted"}, "Notizen vorhanden") : null
+        )
+      )
+    )
+  );
+}
+
+
+
+// Dialog zur Erfassung/Bearbeitung
+function AnimalDialog({animalForm,setAnimalForm,animalDialog,onSave,onClose}){
+  if(!animalDialog.open) return null;
+
+  const tier = animalDialog.tier || {};
+
+  const updateField = (field,value)=>{
+    setAnimalForm(prev=>({...prev,[field]:value}));
+  };
+
+  const updateAbgang = (field,value)=>{
+    setAnimalForm(prev=>({
+      ...prev,
+      abgang:{
+        ...(prev.abgang||{}),
+        [field]:value
+      }
+    }));
+  };
+
+  const onSubmit = (e)=>{
+    e.preventDefault();
+    onSave();
+  };
+
+  const isAbgang = animalForm.status===STATUS.ABGANG || animalForm.status===STATUS.TOT || animalForm.status===STATUS.VERKAUFT;
+
+  const istNeu = !animalDialog.tier;
+
+  return React.createElement("div",{className:"fixed inset-0 bg-black/50 flex items-center justify-center z-50"},
+    React.createElement("div",{className:"bg-white rounded-2xl shadow-soft-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col"},
+      React.createElement("div",{className:"px-4 py-3 border-b flex items-center gap-2"},
+        React.createElement("div",{className:"flex flex-col"},
+          React.createElement("div",{className:"flex items-center gap-2"},
+            React.createElement("h2",{className:"text-sm font-semibold text-slate-900"},
+              istNeu ? "Neues Tier anlegen" : "Tier bearbeiten"
+            ),
+            animalForm.status && React.createElement(StatusBadge,{tier:animalForm})
+          ),
+          React.createElement("div",{className:"muted"},
+            istNeu ? "Erfasse eine neue Sau, einen Eber oder ein Ferkel." : "Passe die Daten des Tieres an."
+          )
+        ),
+        React.createElement("div",{className:"ml-auto flex items-center gap-2"},
+          React.createElement("button",{className:"btn-ghost",onClick:onClose},"Abbrechen"),
+          React.createElement("button",{className:"btn",onClick:onSave},
+            istNeu ? "Anlegen" : "Speichern"
+          )
+        )
+      ),
+      React.createElement("form",{onSubmit:onSubmit,className:"flex-1 overflow-auto px-4 py-3 space-y-3"},
+        React.createElement("div",{className:"grid grid-cols-1 sm:grid-cols-3 gap-3"},
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Tier-Nr."),
+            React.createElement("input",{
+              className:"input",
+              value:animalForm.id||"",
+              onChange:e=>updateField("id",e.target.value)
+            })
+          ),
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Name"),
+            React.createElement("input",{
+              className:"input",
+              value:animalForm.name||"",
+              onChange:e=>updateField("name",e.target.value)
+            })
+          ),
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Art"),
+            React.createElement("select",{
+              className:"select",
+              value:animalForm.art||"",
+              onChange:e=>updateField("art",e.target.value)
+            },
+              React.createElement("option",{value:""},"– wählen –"),
+              React.createElement("option",{value:ART.SAU},"Sau"),
+              React.createElement("option",{value:ART.EBER},"Eber"),
+              React.createElement("option",{value:ART.FERKEL},"Ferkel")
+            )
+          )
+        ),
+        React.createElement("div",{className:"grid grid-cols-1 sm:grid-cols-4 gap-3"},
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Geburtsdatum"),
+            React.createElement("input",{
+              type:"date",
+              className:"input",
+              value:animalForm.geburtsdatum||"",
+              onChange:e=>updateField("geburtsdatum",e.target.value)
+            })
+          ),
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Geburtsgewicht (kg)"),
+            React.createElement("input",{
+              type:"number",
+              step:"0.1",
+              className:"input",
+              value:animalForm.gewichtStart||"",
+              onChange:e=>updateField("gewichtStart",e.target.value ? parseFloat(e.target.value) : null)
+            })
+          ),
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Herkunft"),
+            React.createElement("input",{
+              className:"input",
+              value:animalForm.herkunft||"",
+              onChange:e=>updateField("herkunft",e.target.value)
+            })
+          ),
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Abstammung"),
+            React.createElement("input",{
+              className:"input",
+              value:animalForm.abstammung||"",
+              onChange:e=>updateField("abstammung",e.target.value)
+            })
+          )
+        ),
+        React.createElement("div",{className:"grid grid-cols-1 sm:grid-cols-3 gap-3"},
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Stall/Ort"),
+            React.createElement("input",{
+              className:"input",
+              value:animalForm.stall||"",
+              onChange:e=>updateField("stall",e.target.value)
+            })
+          ),
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Gruppe/Bucht"),
+            React.createElement("input",{
+              className:"input",
+              value:animalForm.gruppe||"",
+              onChange:e=>updateField("gruppe",e.target.value)
+            })
+          ),
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Status"),
+            React.createElement("select",{
+              className:"select",
+              value:animalForm.status||"",
+              onChange:e=>updateField("status",e.target.value)
+            },
+              React.createElement("option",{value:""},"– wählen –"),
+              React.createElement("option",{value:STATUS.AKTIV},"Aktiv"),
+              React.createElement("option",{value:STATUS.VERKAUFT},"Verkauft"),
+              React.createElement("option",{value:STATUS.TOT},"Verendet"),
+              React.createElement("option",{value:STATUS.ABGANG},"Abgang")
+            )
+          )
+        ),
+        React.createElement("div",{className:"grid grid-cols-1 sm:grid-cols-2 gap-3"},
+          React.createElement("div",{className:"space-y-1"},
+            React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Notizen"),
+            React.createElement("textarea",{
+              className:"input min-h-[4rem]",
+              value:animalForm.notizen||"",
+              onChange:e=>updateField("notizen",e.target.value)
+            })
+          ),
+          React.createElement("div",{className:"space-y-2"},
+            React.createElement("div",{className:"flex items-center gap-2"},
+              React.createElement("label",{className:"text-xs font-medium text-slate-700 flex items-center gap-1"},
+                "Tier in Statistiken ignorieren"
+              ),
+              React.createElement("input",{
+                type:"checkbox",
+                checked:!!animalForm.statusIgnorieren,
+                onChange:e=>updateField("statusIgnorieren",e.target.checked)
+              })
+            ),
+            React.createElement("div",{className:"text-[0.7rem] text-slate-500"},
+              "Ignorierte Tiere werden nicht in Kennzahlen/Übersichten mitgezählt."
+            )
+          )
+        ),
+
+        isAbgang && React.createElement("div",{className:"mt-2 card-soft border border-amber-200/70 bg-amber-50/50 px-3 py-2 rounded-xl"},
+          React.createElement("div",{className:"flex items-center gap-2 mb-2"},
+            React.createElement("span",{className:"text-xs font-semibold text-amber-800"},"Abgang/Verkauf"),
+            React.createElement("span",{className:"muted"},"Detailangaben zum Abgang")
+          ),
+          React.createElement("div",{className:"grid grid-cols-1 sm:grid-cols-4 gap-3"},
+            React.createElement("div",{className:"space-y-1"},
+              React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Datum"),
+              React.createElement("input",{
+                type:"date",
+                className:"input",
+                value:(animalForm.abgang && animalForm.abgang.datum) || "",
+                onChange:e=>updateAbgang("datum",e.target.value)
+              })
+            ),
+            React.createElement("div",{className:"space-y-1"},
+              React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Gewicht (kg)"),
+              React.createElement("input",{
+                type:"number",
+                step:"0.1",
+                className:"input",
+                value:(animalForm.abgang && animalForm.abgang.gewicht) || "",
+                onChange:e=>updateAbgang("gewicht",e.target.value ? parseFloat(e.target.value) : null)
+              })
+            ),
+            React.createElement("div",{className:"space-y-1"},
+              React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Preis (€)"),
+              React.createElement("input",{
+                type:"number",
+                step:"0.01",
+                className:"input",
+                value:(animalForm.abgang && animalForm.abgang.preis) || "",
+                onChange:e=>updateAbgang("preis",e.target.value ? parseFloat(e.target.value) : null)
+              })
+            ),
+            React.createElement("div",{className:"space-y-1"},
+              React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Abnehmer"),
+              React.createElement("input",{
+                className:"input",
+                value:(animalForm.abgang && animalForm.abgang.abnehmer) || "",
+                onChange:e=>updateAbgang("abnehmer",e.target.value)
+              })
+            )
+          ),
+          React.createElement("div",{className:"mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3"},
+            React.createElement("div",{className:"space-y-1"},
+              React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Grund"),
+              React.createElement("input",{
+                className:"input",
+                value:(animalForm.abgang && animalForm.abgang.grund) || "",
+                onChange:e=>updateAbgang("grund",e.target.value)
+              })
+            ),
+            React.createElement("div",{className:"space-y-1"},
+              React.createElement("label",{className:"text-xs font-medium text-slate-700"},"Bemerkung"),
+              React.createElement("input",{
+                className:"input",
+                value:(animalForm.abgang && animalForm.abgang.bemerkung) || "",
+                onChange:e=>updateAbgang("bemerkung",e.target.value)
+              })
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+
+// Wurf-/Behandlungsdialoge etc. (vereinfachte Darstellung – hier nicht einzeln ausgegliedert)
+
+
+// Hauptkomponente
 function App(){
   // Tiere beim Start laden: zuerst aus localStorage, sonst Demo-Bestand
   const [tiere,setTiere] = useState(() => {
@@ -198,101 +561,152 @@ function App(){
     return initialAnimals();
   });
 
+
   // Alle Änderungen automatisch im Browser speichern
-  useEffect(() => {
+  useEffect(()=>{
     try{
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tiere));
     }catch(e){
-      console.error("Konnte Daten nicht speichern:", e);
+      console.error("Konnte Daten nicht in localStorage speichern:", e);
     }
-  }, [tiere]);
+  },[tiere]);
 
+
+  const [filterText,setFilterText] = useState("");
+  const [filterArt,setFilterArt] = useState("");
+  const [filterStatus,setFilterStatus] = useState("aktiv");
   const [markiert,setMarkiert] = useState([]);
-  const [tab,setTab] = useState("bewegungen");
-  const [filter,setFilter] = useState({art:"alle", bestand:"alle"});
-  const [search,setSearch] = useState("");
+  const [animalDialog,setAnimalDialog] = useState({open:false,mode:"create",tier:null});
+  const [animalForm,setAnimalForm] = useState({});
+  const [tab,setTab] = useState("liste");
 
-  const emptyAnimalForm = {
-    art:"Sau",
-    nummer:"",
-    gruppe:"Zuchtsau",
-    stallnr:"1",
-    ohrmarke:"",
-    taetowierung:"",
-    geburtsdatum:today(),
-    rasse:"F1",
-    bemerkungen:"",
-    zugangsdatum:today(),
-    zugangsgewicht:"",
-    einkaufspreis:"",
-    zugangsgrund:"",
-    lieferant:"",
-    abgangsdatum:"",
-    abgangsgewicht:"",
-    verkaufspreis:"",
-    abgangsgrund:"",
-    abnehmer:"",
-    statusIgnorieren:false
-  };
-  const [animalDialog,setAnimalDialog] = useState({open:false,mode:"new",tier:null});
-  const [animalForm,setAnimalForm] = useState(emptyAnimalForm);
+  // Filterlogik
+  const gefiltert = useMemo(()=>{
+    let res = [...tiere];
+    if(filterArt){
+      res = res.filter(t=>t.art===filterArt);
+    }
+    if(filterStatus){
+      if(filterStatus==="nurAktive"){
+        res = res.filter(t=>!t.status || t.status===STATUS.AKTIV);
+      }else if(filterStatus==="nurAbgaenge"){
+        res = res.filter(t=>t.status && t.status!==STATUS.AKTIV);
+      }else if(filterStatus==="aktiv"){
+        res = res.filter(t=>!t.status || t.status===STATUS.AKTIV);
+      }
+    }
+    if(filterText){
+      const q = filterText.toLowerCase();
+      res = res.filter(t=>{
+        return (
+          (t.id && t.id.toLowerCase().includes(q)) ||
+          (t.name && t.name.toLowerCase().includes(q)) ||
+          (t.gruppe && t.gruppe.toLowerCase().includes(q)) ||
+          (t.stall && t.stall.toLowerCase().includes(q))
+        );
+      });
+    }
+    return res;
+  },[tiere,filterArt,filterStatus,filterText]);
 
-  const gefiltert = useMemo(()=>tiere.filter(t=>{
-    if(filter.art!=="alle" && t.art!==filter.art) return false;
-    if(filter.bestand==="imBestand" && t.abgangsdatum) return false;
-    if(filter.bestand==="abgegangen" && !t.abgangsdatum) return false;
-    if(search && !( (t.nummer+" "+t.gruppe+" "+t.stallnr+" "+(t.rasse||"")).toLowerCase().includes(search.toLowerCase()) )) return false;
-    return true;
-  }),[tiere,filter,search]);
 
   const stats = useMemo(()=>{
-    const byArt={};
-    gefiltert.forEach(t=>byArt[t.art]=(byArt[t.art]||0)+1);
-    return {anzahl:gefiltert.length,byArt};
-  },[gefiltert]);
+    const total = tiere.length;
+    const aktiv = tiere.filter(t=>!t.status || t.status===STATUS.AKTIV).length;
+    const abgang = tiere.filter(t=>t.status && t.status!==STATUS.AKTIV).length;
+    const byArt = {};
+    tiere.forEach(t=>{
+      byArt[t.art] = (byArt[t.art]||0)+1;
+    });
 
-  function toggleMark(id){
-    setMarkiert(m=>m.includes(id)? m.filter(x=>x!==id):[...m,id]);
-  }
-  function selectAll(){ setMarkiert(gefiltert.map(t=>t.id)); }
-  function clearSel(){ setMarkiert([]); }
+    // Beispiel-Kennzahlen
+    let wurfAnz = 0;
+    let lebendSum = 0;
+    let abgesetztSum = 0;
+    tiere.forEach(t=>{
+      (t.wurfausfaelle||[]).forEach(w=>{
+        wurfAnz++;
+        lebendSum += w.lebend||0;
+        abgesetztSum += w.abgesetzt||0;
+      });
+    });
+    const durchsLebend = wurfAnz>0 ? (lebendSum/wurfAnz) : null;
+    const durchsAbgesetzt = wurfAnz>0 ? (abgesetztSum/wurfAnz) : null;
+
+    return {total,aktiv,abgang,byArt,wurfAnz,durchsLebend,durchsAbgesetzt};
+  },[tiere]);
+
 
   function openNewAnimal(){
-    setAnimalForm(emptyAnimalForm);
-    setAnimalDialog({open:true,mode:"new",tier:null});
+    setAnimalForm({
+      id:"",
+      name:"",
+      art:ART.SAU,
+      geburtsdatum:todayStr(),
+      gewichtStart:null,
+      herkunft:"",
+      abstammung:"",
+      stall:"",
+      gruppe:"",
+      notizen:"",
+      status:STATUS.AKTIV,
+      abgang:null,
+      statusIgnorieren:false
+    });
+    setAnimalDialog({open:true,mode:"create",tier:null});
   }
 
-  function openEditAnimal(){
-    if(markiert.length!==1){
-      alert("Bitte genau ein Tier in der Liste markieren.");
-      return;
-    }
-    const tier = tiere.find(t=>t.id===markiert[0]);
-    if(!tier) return;
+
+  function openEditAnimal(tier){
     setAnimalForm({
-      art: tier.art===ART.EBER?"Eber":"Sau",
-      nummer: tier.nummer||"",
-      gruppe: tier.gruppe||"Zuchtsau",
-      stallnr: tier.stallnr||"1",
-      ohrmarke: tier.ohrmarke||"",
-      taetowierung: tier.taetowierung||"",
-      geburtsdatum: tier.geburtsdatum||today(),
-      rasse: tier.rasse||"F1",
-      bemerkungen: tier.bemerkungen||"",
-      zugangsdatum: (tier.zugang && tier.zugang.datum) || today(),
-      zugangsgewicht: (tier.zugang && tier.zugang.gewicht) || "",
-      einkaufspreis: (tier.zugang && tier.zugang.preis) || "",
-      zugangsgrund: (tier.zugang && tier.zugang.grund) || "",
-      lieferant: (tier.zugang && tier.zugang.lieferant) || "",
-      abgangsdatum: (tier.abgang && tier.abgang.datum) || (tier.abgangsdatum||""),
-      abgangsgewicht: (tier.abgang && tier.abgang.gewicht) || "",
-      verkaufspreis: (tier.abgang && tier.abgang.preis) || "",
-      abgangsgrund: (tier.abgang && tier.abgang.grund) || "",
-      abnehmer: (tier.abgang && tier.abgang.abnehmer) || "",
+      ...tier,
+      gewichtStart: tier.gewichtStart || "",
+      geburtsdatum: tier.geburtsdatum || "",
+      herkunft: tier.herkunft || "",
+      abstammung: tier.abstammung || "",
+      stall: tier.stall || "",
+      gruppe: tier.gruppe || "",
+      notizen: tier.notizen || "",
+      status: tier.status || STATUS.AKTIV,
+      abgang: tier.abgang || null,
       statusIgnorieren: !!tier.statusIgnorieren
     });
     setAnimalDialog({open:true,mode:"edit",tier});
   }
+
+
+  function saveAnimal(){
+    const f = animalForm;
+    const clean = {...f};
+    if(clean.gewichtStart==="") clean.gewichtStart = null;
+
+    if(!clean.art) clean.art = ART.SAU;
+    if(!clean.status) clean.status = STATUS.AKTIV;
+
+    if(animalDialog.mode==="create"){
+      // Wenn keine ID vergeben, automatisch generieren
+      if(!clean.id){
+        const prefix = clean.art===ART.SAU ? "S" : clean.art===ART.EBER ? "E" : "F";
+        const existing = tiere.filter(t=>t.art===clean.art).length;
+        const nr = String(existing+1).padStart(3,"0");
+        clean.id = prefix+"-"+nr;
+      }
+      setTiere(prev=>[...prev,clean]);
+    }else{
+      // bearbeiten
+      setTiere(prev=>prev.map(t=>t===animalDialog.tier ? clean : t));
+    }
+    setAnimalDialog({open:false,mode:"create",tier:null});
+  }
+
+
+  function toggleMark(tier){
+    setMarkiert(prev=>{
+      if(prev.includes(tier)) return prev.filter(x=>x!==tier);
+      return [...prev,tier];
+    });
+  }
+
 
   function deleteAnimals(){
     if(markiert.length===0){
@@ -300,59 +714,10 @@ function App(){
       return;
     }
     if(!confirm("Sollen die markierten Tiere wirklich gelöscht werden? ("+markiert.length+" Stück)")) return;
-    setTiere(prev=>prev.filter(t=>!markiert.includes(t.id)));
+    setTiere(prev=>prev.filter(t=>!markiert.includes(t)));
     setMarkiert([]);
   }
 
-  function saveAnimal(){
-    if(!animalForm.nummer){
-      alert("Bitte eine Tier-/Sau-Nummer eingeben.");
-      return;
-    }
-    if(animalDialog.mode==="new"){
-      const neu = {
-        id:uid(),
-        art: animalForm.art==="Eber"?ART.EBER:ART.SAU,
-        nummer: animalForm.nummer,
-        gruppe: animalForm.gruppe,
-        stallnr: animalForm.stallnr,
-        rasse: animalForm.rasse,
-        geburtsdatum: animalForm.geburtsdatum,
-        abgangsdatum: animalForm.abgangsdatum || null,
-        status: STATUS.GUEST,
-        ohrmarke: animalForm.ohrmarke,
-        taetowierung: animalForm.taetowierung,
-        bemerkungen: animalForm.bemerkungen,
-        zugang:{datum:animalForm.zugangsdatum,gewicht:animalForm.zugangsgewicht,preis:animalForm.einkaufspreis,grund:animalForm.zugangsgrund,lieferant:animalForm.lieferant},
-        abgang: animalForm.abgangsdatum ? {datum:animalForm.abgangsdatum,gewicht:animalForm.abgangsgewicht,preis:animalForm.verkaufspreis,grund:animalForm.abgangsgrund,abnehmer:animalForm.abnehmer} : null,
-        statusIgnorieren: animalForm.statusIgnorieren,
-        bewegungen:{ zukauf:[], belegungen:[], traechPruefungen:[], stallwechsel:[], ferkelungen:[], ferkelBehandlungen:[], absetzungen:[] }
-      };
-      setTiere(prev=>[...prev,neu]);
-    } else if(animalDialog.mode==="edit" && animalDialog.tier){
-      const id = animalDialog.tier.id;
-      setTiere(prev=>prev.map(t=>{
-        if(t.id!==id) return t;
-        return {
-          ...t,
-          art: animalForm.art==="Eber"?ART.EBER:ART.SAU,
-          nummer: animalForm.nummer,
-          gruppe: animalForm.gruppe,
-          stallnr: animalForm.stallnr,
-          rasse: animalForm.rasse,
-          geburtsdatum: animalForm.geburtsdatum,
-          abgangsdatum: animalForm.abgangsdatum || null,
-          ohrmarke: animalForm.ohrmarke,
-          taetowierung: animalForm.taetowierung,
-          bemerkungen: animalForm.bemerkungen,
-          zugang:{datum:animalForm.zugangsdatum,gewicht:animalForm.zugangsgewicht,preis:animalForm.einkaufspreis,grund:animalForm.zugangsgrund,lieferant:animalForm.lieferant},
-          abgang: animalForm.abgangsdatum ? {datum:animalForm.abgangsdatum,gewicht:animalForm.abgangsgewicht,preis:animalForm.verkaufspreis,grund:animalForm.abgangsgrund,abnehmer:animalForm.abnehmer} : null,
-          statusIgnorieren: animalForm.statusIgnorieren
-        };
-      }));
-    }
-    setAnimalDialog({open:false,mode:"new",tier:null});
-  }
 
   function exportJson(){
     const blob = new Blob([JSON.stringify({tiere},null,2)],{type:"application/json"});
@@ -362,841 +727,265 @@ function App(){
     URL.revokeObjectURL(url);
   }
 
-  function resetData(){
+
+  function importJson(){
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+
+    input.onchange = (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const text = ev.target.result;
+          const data = JSON.parse(text);
+
+          let neueTiere;
+          if (Array.isArray(data)) {
+            neueTiere = data;
+          } else if (data && Array.isArray(data.tiere)) {
+            neueTiere = data.tiere;
+          } else {
+            alert("Die Datei hat kein gültiges SeifiSau-Format.");
+            return;
+          }
+
+          setTiere(neueTiere);
+          setMarkiert([]);
+          alert("Bestand wurde erfolgreich aus der Datei geladen.");
+        } catch (err) {
+          console.error("Fehler beim Import:", err);
+          alert("Die Datei konnte nicht gelesen werden (ungültiges JSON?).");
+        }
+      };
+
+      reader.readAsText(file, "utf-8");
+    };
+
+    input.click();
+  }
+
+
+function resetData(){
     if(!confirm("Wirklich alle Daten löschen und mit Demo-Bestand neu starten?")) return;
     try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
     setTiere(initialAnimals());
     setMarkiert([]);
   }
 
+
   const gefiltertMitMark = gefiltert;
+
 
   return React.createElement("div",{className:"min-h-screen"},
     /* Kopf */
     React.createElement("div",{className:"border-b bg-white"},
-      React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-2 flex items-center justify-between text-sm"},
+      React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-2 flex items-center justify-between gap-2"},
+        React.createElement("div",{className:"flex flex-col gap-0.5"},
+          React.createElement("div",{className:"flex items-center gap-2"},
+            React.createElement("div",{className:"flex items-center gap-2"},
+              React.createElement("span",{className:"text-lg"},"🐷"),
+              React.createElement("span",{className:"font-semibold text-sm tracking-tight text-slate-900"},
+                "SeifiSau"
+              )
+            ),
+            React.createElement("span",{className:"badge-pill bg-emerald-100 text-emerald-800 border border-emerald-200/80"},
+              "Bestandsführung"
+            )
+          ),
+          React.createElement("div",{className:"muted"},
+            "Sauen, Eber und Ferkel im Blick – ohne Schnickschnack."
+          )
+        ),
         React.createElement("div",{className:"flex items-center gap-2"},
-          React.createElement("div",{className:"w-7 h-7 rounded-full bg-rose-500 text-white flex items-center justify-center text-xs font-bold"},"SS"),
-          React.createElement("div",null,
-            React.createElement("div",{className:"font-semibold text-base"},"SeifiSau"),
-            React.createElement("div",{className:"muted"},"Sauenplaner")
-          )
-        ),
-        React.createElement("div",{className:"flex gap-2"},
-          ["Bestand","Eingabe","Auswertung","Verwaltung","Optionen","Hilfe"].map(m =>
-            React.createElement("button",{key:m,className:"px-3 py-1.5 rounded-xl hover:bg-slate-100"},m)
+          React.createElement("button",{className:"btn secondary",onClick:openNewAnimal},
+            React.createElement("span",null,"+ Neues Tier")
           )
         )
       )
     ),
-    /* Hauptnavigation */
-    React.createElement("div",{className:"border-b bg-white/70"},
-      React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-3 grid grid-cols-2 md:grid-cols-8 gap-2"},
-        ["Neue Tiere","Bewegungen","Infobericht","Buchungen","Arbeitspläne","Bestände","Statistik","Wartezeiten"].map((l) =>
-          React.createElement("button",{
-              key:l,
-              className:"btn w-full",
-              onClick:()=>{
-                if(l==="Neue Tiere") openNewAnimal();
-                if(l==="Bewegungen") setTab("bewegungen");
-                if(l==="Arbeitspläne") setTab("arbeitsplan");
-                if(l==="Bestände") setTab("bestände");
-                if(l==="Statistik") setTab("statistik");
-                if(l==="Wartezeiten") setTab("wartezeiten");
-              }
-            },
-            l
-          )
-        )
-      )
-    ),
-    /* Filterleiste */
-    React.createElement("div",{className:"border-b bg-white"},
-      React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center gap-3"},
-        React.createElement("div",{className:"flex items-center gap-2 text-sm"},
-          React.createElement("span",null,"Ansicht:"),
-          React.createElement("select",{className:"select",value:filter.art,onChange:e=>setFilter({...filter,art:e.target.value})},
-            React.createElement("option",{value:"alle"},"Alle Tiere"),
-            React.createElement("option",{value:ART.SAU},"Sauen"),
-            React.createElement("option",{value:ART.EBER},"Eber")
-          ),
-          React.createElement("select",{className:"select",value:filter.bestand,onChange:e=>setFilter({...filter,bestand:e.target.value})},
-            React.createElement("option",{value:"alle"},"Alles"),
-            React.createElement("option",{value:"imBestand"},"Im Bestand"),
-            React.createElement("option",{value:"abgegangen"},"Abgegangen")
-          )
-        ),
-        React.createElement("div",{className:"ml-auto flex items-center gap-2"},
-          React.createElement("input",{className:"input",placeholder:"Nummer, Gruppe, Stall...",value:search,onChange:e=>setSearch(e.target.value)}),
-          React.createElement("button",{className:"btn",onClick:selectAll},"Alle markieren"),
-          React.createElement("button",{className:"btn",onClick:clearSel},"Auswahl löschen")
-        )
-      )
-    ),
-    /* Hauptbereich */
-    React.createElement("div",{className:"mx-auto max-w-7xl p-4 grid grid-cols-1 md:grid-cols-3 gap-4"},
-      /* Tierliste */
-      React.createElement("div",{className:"md:col-span-1 card"},
-        React.createElement("div",{className:"card-header flex justify-between items-center"},
-          React.createElement("span",null,"Tierliste (",gefiltertMitMark.length,")"),
-          React.createElement("div",{className:"flex gap-1"},
-            React.createElement("button",{className:"btn",onClick:openNewAnimal},"Neu"),
-            React.createElement("button",{className:"btn",onClick:openEditAnimal},"Bearbeiten"),
-            React.createElement("button",{className:"btn",onClick:deleteAnimals},"Löschen")
-          )
-        ),
-        React.createElement("div",{className:"card-body space-y-2",style:{maxHeight:"520px",overflow:"auto"}},
-          gefiltertMitMark.map(t =>
-            React.createElement("button",{key:t.id,onClick:()=>toggleMark(t.id),
-              className:"w-full text-left rounded-xl border px-3 py-2 text-xs "+(markiert.includes(t.id)?"border-rose-400 ring-2 ring-rose-200":"border-slate-200 hover:bg-slate-50")},
-              React.createElement("div",{className:"flex justify-between text-sm mb-1"},
-                React.createElement("span",{style:{fontWeight:600}},t.art+" "+t.nummer),
-                React.createElement("span",{style:{color:"#64748b"}},"Stall ",t.stallnr||"-")
+
+    /* Inhalt */
+    React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-3 flex flex-col gap-3"},
+      React.createElement("div",{className:"grid grid-cols-1 lg:grid-cols-3 gap-3"},
+        React.createElement("div",{className:"lg:col-span-2 card shadow-soft px-3 py-2"},
+          React.createElement("div",{className:"flex flex-wrap items-center gap-2 mb-2"},
+            React.createElement("div",{className:"flex items-center gap-2 flex-1 min-w-[12rem]"},
+              React.createElement("input",{
+                className:"input",
+                placeholder:"Suchen nach Name, Nr., Stall, Gruppe...",
+                value:filterText,
+                onChange:e=>setFilterText(e.target.value)
+              })
+            ),
+            React.createElement("div",{className:"flex items-center gap-1"},
+              React.createElement("select",{
+                className:"select text-xs",
+                value:filterArt,
+                onChange:e=>setFilterArt(e.target.value)
+              },
+                React.createElement("option",{value:""},"Alle Arten"),
+                React.createElement("option",{value:ART.SAU},"Sauen"),
+                React.createElement("option",{value:ART.EBER},"Eber"),
+                React.createElement("option",{value:ART.FERKEL},"Ferkel")
               ),
-              React.createElement("div",{style:{color:"#64748b"}}, "Gruppe ",t.gruppe||"-"," • Rasse ",t.rasse||"-")
-            )
-          )
-        )
-      ),
-      /* Rechts: Tabs */
-      React.createElement("div",{className:"md:col-span-2 card"},
-        React.createElement("div",{className:"card-header"},"Bewegungsdaten & Auswertungen"),
-        React.createElement("div",{className:"card-body"},
-          React.createElement("div",{className:"flex gap-2 mb-3"},
-            ["bewegungen","arbeitsplan","status","bestände","statistik","wartezeiten"].map(k =>
-              React.createElement("div",{key:k,onClick:()=>setTab(k),className:"tab "+(tab===k?"tab-active":"")},k.toUpperCase())
+              React.createElement("select",{
+                className:"select text-xs",
+                value:filterStatus,
+                onChange:e=>setFilterStatus(e.target.value)
+              },
+                React.createElement("option",{value:"aktiv"},"Nur aktive"),
+                React.createElement("option",{value:"nurAktive"},"Aktiv (ohne Abgänge)"),
+                React.createElement("option",{value:"nurAbgaenge"},"Nur Abgänge")
+              )
             )
           ),
-          tab==="bewegungen" && React.createElement(MovementEntry,{markiert,setTiere}),
-          tab==="arbeitsplan" && React.createElement(Arbeitsplan,{tiere:gefiltert}),
-          tab==="status" && React.createElement(StatusTabs,{tiere:gefiltert}),
-          tab==="bestände" && React.createElement(Bestaende,{tiere:gefiltert}),
-          tab==="statistik" && React.createElement(Statistik,{tiere:gefiltert}),
-          tab==="wartezeiten" && React.createElement(Wartezeiten,{tiere:gefiltert})
-        )
-      )
-    ),
-    /* Fußzeile */
-    React.createElement("div",{className:"sticky bottom-0 bg-white border-t"},
-      React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-2 text-sm flex items-center gap-4"},
-        React.createElement("div",null,"Bestand gesamt: ",React.createElement("b",null,stats.anzahl)),
-        React.createElement("div",{className:"hidden md:flex items-center gap-3",style:{color:"#64748b"}},
-          React.createElement("span",null,"Sauen: ",stats.byArt[ART.SAU]||0),
-          React.createElement("span",null,"Eber: ",stats.byArt[ART.EBER]||0)
+          React.createElement("div",{className:"gradient-bar mb-2"}),
+          React.createElement("div",{className:"flex flex-col gap-1 max-h-[60vh] overflow-auto pr-1"},
+            gefiltertMitMark.length===0
+              ? React.createElement("div",{className:"text-xs text-slate-500 py-4 text-center"},
+                  "Keine Tiere gefunden. Passe die Filter an oder lege ein neues Tier an."
+                )
+              : gefiltertMitMark.map((t,index)=>React.createElement(AnimalCard,{
+                  key:index,
+                  tier:t,
+                  selected:markiert.includes(t),
+                  onToggleSelect:()=>toggleMark(t),
+                  onOpen:()=>openEditAnimal(t),
+                  markiert
+                }))
+          )
         ),
-        React.createElement("div",{className:"ml-auto flex items-center gap-2"},
-          React.createElement("button",{className:"btn",onClick:exportJson},"Export"),
-          React.createElement("button",{className:"btn",onClick:resetData},"Daten zurücksetzen")
+
+        React.createElement("div",{className:"flex flex-col gap-3"},
+          React.createElement("div",{className:"card px-3 py-2"},
+            React.createElement("div",{className:"flex items-center justify-between mb-1"},
+              React.createElement("div",{className:"flex items-center gap-2"},
+                React.createElement("span",{className:"text-xs font-semibold text-slate-800"},"Bestand"),
+                React.createElement("span",{className:"badge-pill bg-slate-900 text-slate-50 border border-slate-900/70"},
+                  stats.total," Tiere"
+                )
+              ),
+              React.createElement("div",{className:"flex items-center gap-1 text-[0.65rem] text-slate-500"},
+                React.createElement("span",null,"Aktiv: ",stats.aktiv),
+                React.createElement("span",{className:"text-slate-300"},"/"),
+                React.createElement("span",null,"Abgänge: ",stats.abgang)
+              )
+            ),
+            React.createElement("div",{className:"grid grid-cols-3 gap-2 mt-2 text-[0.7rem]"},
+              React.createElement("div",{className:"p-2 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-0.5"},
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"Sauen"),
+                React.createElement("div",{className:"text-sm font-semibold text-slate-900"},stats.byArt[ART.SAU]||0),
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"inkl. Jungsauen")
+              ),
+              React.createElement("div",{className:"p-2 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-0.5"},
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"Eber"),
+                React.createElement("div",{className:"text-sm font-semibold text-slate-900"},stats.byArt[ART.EBER]||0),
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"Deck- & Jungeber")
+              ),
+              React.createElement("div",{className:"p-2 rounded-lg bg-slate-50 border border-slate-100 flex flex-col gap-0.5"},
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"Ferkel"),
+                React.createElement("div",{className:"text-sm font-semibold text-slate-900"},stats.byArt[ART.FERKEL]||0),
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"aufgezogen")
+              )
+            ),
+            React.createElement("div",{className:"divider"}),
+            React.createElement("div",{className:"grid grid-cols-2 gap-2 text-[0.7rem]"},
+              React.createElement("div",{className:"flex flex-col gap-0.5"},
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"Ø lebend/Wurf"),
+                React.createElement("div",{className:"text-sm font-semibold text-slate-900"},
+                  stats.durchsLebend!==null ? round1(stats.durchsLebend) : "–"
+                ),
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"aus ",stats.wurfAnz," Würfen")
+              ),
+              React.createElement("div",{className:"flex flex-col gap-0.5"},
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"Ø abgesetzt/Wurf"),
+                React.createElement("div",{className:"text-sm font-semibold text-slate-900"},
+                  stats.durchsAbgesetzt!==null ? round1(stats.durchsAbgesetzt) : "–"
+                ),
+                React.createElement("div",{className:"text-[0.65rem] text-slate-500"},"inkl. Umrauscher")
+              )
+            )
+          ),
+
+          React.createElement("div",{className:"card px-3 py-2"},
+            React.createElement("div",{className:"flex items-center justify-between mb-2"},
+              React.createElement("span",{className:"text-xs font-semibold text-slate-800"},"Markierte Tiere"),
+              React.createElement("span",{className:"badge-pill bg-slate-900 text-slate-50 border border-slate-900/70"},
+                markiert.length
+              )
+            ),
+            markiert.length===0
+              ? React.createElement("div",{className:"text-[0.7rem] text-slate-500"},
+                  "Markiere Tiere links über den Kreis, um Sammelaktionen durchzuführen."
+                )
+              : React.createElement("div",{className:"space-y-1 text-[0.7rem]"},
+                  React.createElement("div",{className:"flex flex-wrap gap-1"},
+                    markiert.slice(0,6).map((t,i)=>React.createElement("span",{key:i,className:"badge-pill"},
+                      t.id || t.name || "Tier"
+                    )),
+                    markiert.length>6 && React.createElement("span",{className:"badge-pill-muted text-slate-500"},
+                      "+",markiert.length-6," weitere"
+                    )
+                  ),
+                  React.createElement("div",{className:"flex flex-wrap gap-1 mt-1"},
+                    React.createElement("button",{
+                      type:"button",
+                      className:"btn-ghost text-xs",
+                      onClick:deleteAnimals
+                    },"Markierte löschen"),
+                    React.createElement("button",{
+                      type:"button",
+                      className:"btn-ghost text-xs",
+                      onClick:()=>setMarkiert([])
+                    },"Markierungen aufheben")
+                  )
+                )
+          )
         )
       )
     ),
+
     animalDialog.open && React.createElement(AnimalDialog,{
       animalForm,
       setAnimalForm,
       animalDialog,
       onSave: saveAnimal,
-      onClose: ()=>setAnimalDialog({open:false,mode:"new",tier:null}),
-      tiere
-    })
-  );
-}
+      onClose: ()=>setAnimalDialog({open:false,mode:"create",tier:null})
+    }),
 
-/* ---------- Bewegungen ---------- */
-function MovementEntry({markiert,setTiere}){
-  const [art,setArt] = useState("Belegung");
-  const [form,setForm] = useState({ datum:today(), deckart:"Natursprung", eberName:FIX_EBER_NAME, eberNr:FIX_EBER_NAME });
-
-  function setF(key,val){
-    setForm(prev=>{
-      const next = {...prev,[key]:val};
-      if(key==="deckart"){
-        if(val==="Natursprung"){
-          next.eberName = FIX_EBER_NAME;
-          next.eberNr   = FIX_EBER_NAME;
-          next.samenStation = "";
-        } else if(val==="Besamung"){
-          next.eberName = "";
-          next.eberNr   = "";
-        }
-      }
-      return next;
-    });
-  }
-
-  function apply(mut){
-    if(markiert.length===0) return;
-    setTiere(prev=>prev.map(t=>{
-      if(!markiert.includes(t.id)) return t;
-      const copy = JSON.parse(JSON.stringify(t));
-      mut(copy);
-      return copy;
-    }));
-  }
-
-  function save(){
-    if(art==="Zukauf"){
-      apply(t=>t.bewegungen.zukauf.push({datum:form.datum, herkunft:form.herkunft||"", statusBeimZukauf:form.statusBeimZukauf||"Jungsau", belegdatum:form.belegdatum||"", eberName:form.eberName||"", eberNr:form.eberNr||"" }));
-    }
-    if(art==="Belegung"){
-      apply(t=>t.bewegungen.belegungen.push({datum:form.datum, anzahl:Number(form.anzahl||1), art:form.deckart||"Natursprung", eberName:form.eberName||"", eberNr:form.eberNr||"", samenStation:form.samenStation||"" }));
-    }
-    if(art==="Trächtigkeitsprüfung"){
-      apply(t=>t.bewegungen.traechPruefungen.push({datum:form.datum, ergebnis:form.ergebnis||"tragend", methode:form.methode||"", kommentar:form.kommentar||"" }));
-    }
-    if(art==="Stallwechsel"){
-      apply(t=>t.bewegungen.stallwechsel.push({datum:form.datum, ziel:form.ziel||"Wartestall"}));
-    }
-    if(art==="Ferkelung"){
-      apply(t=>t.bewegungen.ferkelungen.push({datum:form.datum, lebend:Number(form.lebend||0), tot:Number(form.tot||0), mumifiziert:Number(form.mumifiziert||0)}));
-    }
-    if(art==="Ferkelbehandlung"){
-      apply(t=>t.bewegungen.ferkelBehandlungen.push({datum:form.datum, typ:form.behTyp||"", details:{...form}}));
-    }
-    if(art==="Absetzen"){
-      apply(t=>t.bewegungen.absetzungen.push({datum:form.datum, anzahl:Number(form.anzahlAbgesetzt||0)}));
-    }
-    setForm(f=>({...f, datum:today()}));
-  }
-
-  const natursprung = form.deckart==="Natursprung";
-
-  return React.createElement("div",{className:"grid md:grid-cols-5 gap-4"},
-    React.createElement("div",{className:"md:col-span-2"},
-      React.createElement("div",{className:"card"},
-        React.createElement("div",{className:"card-header"},"Tierauswahl"),
-        React.createElement("div",{className:"card-body"},
-          React.createElement("div",{style:{marginBottom:"0.4rem",color:"#475569"}},"Markierte Tiere: ",React.createElement("b",null,markiert.length)),
-          React.createElement("div",{className:"muted"},"Sammelbuchung: wird auf alle markierten Tiere gespeichert.")
-        )
-      )
-    ),
-    React.createElement("div",{className:"md:col-span-3"},
-      React.createElement("div",{className:"card"},
-        React.createElement("div",{className:"card-header",style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
-          React.createElement("span",null,"Bewegungsdatensatz"),
-          React.createElement("select",{className:"select",style:{width:"11rem"},value:art,onChange:e=>setArt(e.target.value)},
-            ["Zukauf","Belegung","Trächtigkeitsprüfung","Stallwechsel","Ferkelung","Ferkelbehandlung","Absetzen"].map(o =>
-              React.createElement("option",{key:o,value:o},o)
-            )
-          )
+    React.createElement("div",{className:"mt-2 border-t bg-white"},
+      React.createElement("div",{className:"mx-auto max-w-7xl px-4 py-2 flex items-center gap-2 text-[0.7rem] text-slate-500"},
+        React.createElement("div",{className:"flex items-center gap-1"},
+          React.createElement("span",null,"🐷 SeifiSau"),
+          React.createElement("span",{className:"text-slate-400"},"·"),
+          React.createElement("span",null,"lokal im Browser, ohne Cloud.")
         ),
-        React.createElement("div",{className:"card-body grid grid-cols-2 gap-3"},
-          React.createElement("div",null,
-            React.createElement("label",{className:"muted"},"Datum"),
-            React.createElement("input",{type:"date",className:"input",value:form.datum||"",onChange:e=>setF("datum",e.target.value)})
-          ),
-
-          art==="Belegung" && [
-            React.createElement("div",{key:"anz"},
-              React.createElement("label",{className:"muted"},"Anzahl Deckungen"),
-              React.createElement("input",{type:"number",className:"input",value:form.anzahl||1,onChange:e=>setF("anzahl",e.target.value)})
-            ),
-            React.createElement("div",{key:"deck"},
-              React.createElement("label",{className:"muted"},"Deckart"),
-              React.createElement("select",{className:"select",value:form.deckart||"Natursprung",onChange:e=>setF("deckart",e.target.value)},
-                React.createElement("option",{value:"Natursprung"},"Natursprung"),
-                React.createElement("option",{value:"Besamung"},"Besamung")
-              ),
-              natursprung && React.createElement("div",{className:"muted",style:{marginTop:"0.2rem"}},"Deckpartner voreingestellt: Eber ",FIX_EBER_NAME)
-            ),
-            React.createElement("div",{key:"eber",className:"col-span-2"},
-              React.createElement("label",{className:"muted"},"Eber (Name/Nr.) oder Samen-Station"),
-              React.createElement("input",{className:"input",style:{marginBottom:"0.25rem"},placeholder:"Ebername",value:form.eberName||"",onChange:e=>setF("eberName",e.target.value),disabled:natursprung}),
-              React.createElement("div",{className:"grid grid-cols-2 gap-2"},
-                React.createElement("input",{className:"input",placeholder:"Eber-Nr.",value:form.eberNr||"",onChange:e=>setF("eberNr",e.target.value),disabled:natursprung}),
-                React.createElement("input",{className:"input",placeholder:"Samen-Station",value:form.samenStation||"",onChange:e=>setF("samenStation",e.target.value),disabled:natursprung})
-              )
-            )
-          ],
-
-          art==="Zukauf" && [
-            React.createElement("div",{key:"herk"},
-              React.createElement("label",{className:"muted"},"Herkunft/Züchter"),
-              React.createElement("input",{className:"input",value:form.herkunft||"",onChange:e=>setF("herkunft",e.target.value)})
-            ),
-            React.createElement("div",{key:"stat"},
-              React.createElement("label",{className:"muted"},"Status beim Zukauf"),
-              React.createElement("select",{className:"select",value:form.statusBeimZukauf||"Jungsau",onChange:e=>setF("statusBeimZukauf",e.target.value)},
-                React.createElement("option",{value:"Jungsau"},"Jungsau (ungedeckt)"),
-                React.createElement("option",{value:"trächtig"},"Trächtig (gedeckt)")
-              )
-            ),
-            React.createElement("div",{key:"bez"},
-              React.createElement("label",{className:"muted"},"Belegdatum (falls trächtig)"),
-              React.createElement("input",{type:"date",className:"input",value:form.belegdatum||"",onChange:e=>setF("belegdatum",e.target.value)})
-            ),
-            React.createElement("div",{key:"zkeber"},
-              React.createElement("label",{className:"muted"},"Eber Name / Nr. (optional)"),
-              React.createElement("input",{className:"input",style:{marginBottom:"0.25rem"},placeholder:"Name",value:form.eberName||"",onChange:e=>setF("eberName",e.target.value)}),
-              React.createElement("input",{className:"input",placeholder:"Nummer",value:form.eberNr||"",onChange:e=>setF("eberNr",e.target.value)})
-            )
-          ],
-
-          art==="Trächtigkeitsprüfung" && [
-            React.createElement("div",{key:"erg"},
-              React.createElement("label",{className:"muted"},"Ergebnis"),
-              React.createElement("select",{className:"select",value:form.ergebnis||"tragend",onChange:e=>setF("ergebnis",e.target.value)},
-                React.createElement("option",{value:"tragend"},"Tragend"),
-                React.createElement("option",{value:"nicht tragend"},"Nicht tragend")
-              )
-            ),
-            React.createElement("div",{key:"meth"},
-              React.createElement("label",{className:"muted"},"Methode"),
-              React.createElement("input",{className:"input",placeholder:"z. B. Ultraschall",value:form.methode||"",onChange:e=>setF("methode",e.target.value)})
-            ),
-            React.createElement("div",{key:"komm",className:"col-span-2"},
-              React.createElement("label",{className:"muted"},"Kommentar"),
-              React.createElement("input",{className:"input",placeholder:"Optional",value:form.kommentar||"",onChange:e=>setF("kommentar",e.target.value)})
-            )
-          ],
-
-          art==="Stallwechsel" && React.createElement("div",{className:"col-span-2"},
-            React.createElement("label",{className:"muted"},"Zielstall"),
-            React.createElement("select",{className:"select",value:form.ziel||"Wartestall",onChange:e=>setF("ziel",e.target.value)},
-              React.createElement("option",{value:"Deckzentrum"},"Deckzentrum"),
-              React.createElement("option",{value:"Wartestall"},"Wartestall"),
-              React.createElement("option",{value:"Abferkelstall"},"Abferkelstall")
-            )
-          ),
-
-          art==="Ferkelung" && [
-            React.createElement("div",{key:"leb"},
-              React.createElement("label",{className:"muted"},"Ferkel lebend"),
-              React.createElement("input",{type:"number",className:"input",value:form.lebend||0,onChange:e=>setF("lebend",e.target.value)})
-            ),
-            React.createElement("div",{key:"tot"},
-              React.createElement("label",{className:"muted"},"Ferkel totgeboren"),
-              React.createElement("input",{type:"number",className:"input",value:form.tot||0,onChange:e=>setF("tot",e.target.value)})
-            ),
-            React.createElement("div",{key:"mum"},
-              React.createElement("label",{className:"muted"},"Mumifiziert"),
-              React.createElement("input",{type:"number",className:"input",value:form.mumifiziert||0,onChange:e=>setF("mumifiziert",e.target.value)})
-            )
-          ],
-
-          art==="Ferkelbehandlung" && [
-            React.createElement("div",{key:"typ",className:"col-span-2"},
-              React.createElement("label",{className:"muted"},"Behandlungstyp (frei eingeben)"),
-              React.createElement("input",{className:"input",placeholder:"z. B. Tag 1 Naxcel + Kupieren, Eisen, Circo, Draxxin, Kastration ...",value:form.behTyp||"",onChange:e=>setF("behTyp",e.target.value)})
-            ),
-            React.createElement("div",{key:"det",className:"col-span-2"},
-              React.createElement("label",{className:"muted"},"Details / Präparat / Los / Menge"),
-              React.createElement("input",{className:"input",placeholder:"z. B. Präparat, Dosis, Bemerkungen",value:form.details||"",onChange:e=>setF("details",e.target.value)})
-            )
-          ],
-
-          art==="Absetzen" && React.createElement("div",{className:"col-span-2"},
-            React.createElement("label",{className:"muted"},"Abgesetzte Ferkel"),
-            React.createElement("input",{type:"number",className:"input",value:form.anzahlAbgesetzt||0,onChange:e=>setF("anzahlAbgesetzt",e.target.value)})
-          ),
-
-          React.createElement("div",{className:"col-span-2"},
-            React.createElement("label",{className:"muted"},"Kommentar"),
-            React.createElement("input",{className:"input",placeholder:"Optional",value:form.kommentar||"",onChange:e=>setF("kommentar",e.target.value)})
-          ),
-          React.createElement("div",{className:"col-span-2 flex gap-2 mt-1"},
-            React.createElement("button",{className:"btn",onClick:save},"Speichern"),
-            React.createElement("button",{className:"btn"},"OK + Nächster"),
-            React.createElement("button",{className:"btn"},"Löschen")
-          )
+        React.createElement("div",{className:"flex items-center gap-2 text-[0.65rem] text-slate-400"},
+          React.createElement("span",null,"Tiere: ",tiere.length),
+          React.createElement("span",null,"Sauen: ",stats.byArt[ART.SAU]||0),
+          React.createElement("span",null,"Eber: ",stats.byArt[ART.EBER]||0)
+        ),
+        React.createElement("div",{className:"ml-auto flex items-center gap-2"},
+          React.createElement("button",{className:"btn",onClick:exportJson},"Export"),
+          React.createElement("button",{className:"btn",onClick:importJson},"Import"),
+          React.createElement("button",{className:"btn",onClick:resetData},"Daten zurücksetzen")
         )
       )
     )
   );
 }
 
-/* ---------- Arbeitspläne ---------- */
-function Arbeitsplan({tiere}){
-  const PLAENE = [
-    {key:"Absetzung", bezug:"Ferkelung", von:28, bis:30},
-    {key:"Belegung", bezug:"Absetzen", von:5, bis:7},
-    {key:"Ferkelung", bezug:"Belegung", von:115, bis:118},
-    {key:"Trächtigkeitskontr.", bezug:"Belegung", von:21, bis:24}
-  ];
 
-  const [von,setVon] = useState(today());
-  const [wochen,setWochen] = useState(1);
-  const [bis,setBis] = useState(addDaysStr(today(),7*1-1));
-  const [selPlaene,setSelPlaene] = useState(()=>{ const obj={}; PLAENE.forEach(p=>obj[p.key]=true); return obj; });
-  const [felder,setFelder] = useState({nummer:true, art:false, stallnr:false, gruppe:true});
-  const [sort,setSort] = useState("nummer");
-  const [nurSauen,setNurSauen] = useState(true);
-  const [wartezeit,setWartezeit] = useState(false);
 
-  function updateBis(newVon,newWo){ setBis(addDaysStr(newVon, newWo*7-1)); }
-  function onVonChange(v){ setVon(v); updateBis(v,wochen); }
-  function setWeeks(w){ setWochen(w); updateBis(von,w); }
-  function setAllPlaene(val){ const obj={}; PLAENE.forEach(p=>obj[p.key]=val); setSelPlaene(obj); }
-
-  const termine = useMemo(()=>{
-    if(!von || !bis) return [];
-    const vonDt = new Date(von);
-    const bisDt = new Date(bis);
-    const rows = [];
-    tiere.forEach(t=>{
-      if(nurSauen && t.art!==ART.SAU) return;
-      PLAENE.forEach(p=>{
-        if(!selPlaene[p.key]) return;
-        const ref = latestRefDate(t,p.bezug);
-        if(!ref) return;
-        const vomDt = new Date(ref.getTime()+p.von*86400000);
-        const bisTermDt = new Date(ref.getTime()+p.bis*86400000);
-        if(bisTermDt < vonDt || vomDt > bisDt) return;
-        rows.push({
-          vom: vomDt.toISOString().slice(0,10),
-          bis: bisTermDt.toISOString().slice(0,10),
-          termin: p.key,
-          nummer: t.nummer,
-          art: t.art,
-          stallnr: t.stallnr,
-          gruppe: t.gruppe
-        });
-      });
-    });
-    function cmp(x,y){ if(x<y) return -1; if(x>y) return 1; return 0; }
-    rows.sort((a,b)=>{
-      const nA = parseInt(a.nummer,10); const nB = parseInt(b.nummer,10);
-      const numCmp = isNaN(nA)||isNaN(nB) ? cmp(a.nummer,b.nummer) : cmp(nA,nB);
-      const stallA = parseInt(a.stallnr,10); const stallB = parseInt(b.stallnr,10);
-      if(sort==="nummer") return numCmp || cmp(a.gruppe,b.gruppe);
-      if(sort==="art_nummer") return cmp(a.art,b.art) || numCmp;
-      if(sort==="stallnr_nummer") return (isNaN(stallA)||isNaN(stallB)?cmp(a.stallnr,b.stallnr):cmp(stallA,stallB)) || numCmp;
-      if(sort==="gruppe_nummer") return cmp(a.gruppe,b.gruppe) || numCmp;
-      return numCmp;
-    });
-    return rows;
-  },[tiere,von,bis,selPlaene,sort,nurSauen]);
-
-  const sortLabelMap = {nummer:"Nummer",art_nummer:"Art und Nummer",stallnr_nummer:"Stallnr und Nummer",gruppe_nummer:"Gruppe und Nummer"};
-  const vorschau = termine.slice(0,40);
-
-  return React.createElement("div",{className:"grid md:grid-cols-5 gap-4"},
-    React.createElement("div",{className:"md:col-span-2 card"},
-      React.createElement("div",{className:"card-header"},"Arbeitspläne berechnen"),
-      React.createElement("div",{className:"card-body text-xs space-y-3"},
-        React.createElement("div",null,
-          React.createElement("div",{className:"mb-1",style:{fontWeight:600}},"Arbeitspläne"),
-          React.createElement("div",{className:"border rounded-lg h-32 overflow-auto bg-white"},
-            PLAENE.map(p=>
-              React.createElement("label",{key:p.key,style:{display:"block",padding:"2px 6px"}},
-                React.createElement("input",{type:"checkbox",className:"mr-1",checked:!!selPlaene[p.key],onChange:e=>setSelPlaene({...selPlaene,[p.key]:e.target.checked})}),
-                p.key
-              )
-            )
-          ),
-          React.createElement("div",{className:"mt-1 flex gap-2"},
-            React.createElement("button",{className:"btn",onClick:()=>setAllPlaene(true)},"Alle"),
-            React.createElement("button",{className:"btn",onClick:()=>setAllPlaene(false)},"Keine")
-          )
-        ),
-        React.createElement("div",{className:"border-t pt-2 mt-2"},
-          React.createElement("div",{className:"mb-1",style:{fontWeight:600}},"Termine berechnen"),
-          React.createElement("div",{className:"flex items-center gap-2 mb-2"},
-            React.createElement("span",{className:"muted"},"Berechnungszeitraum ab..."),
-            React.createElement("input",{type:"date",className:"input",style:{maxWidth:"130px"},value:von,onChange:e=>onVonChange(e.target.value)}),
-            React.createElement("span",{className:"muted"},"bis"),
-            React.createElement("input",{type:"date",className:"input",style:{maxWidth:"130px"},value:bis,onChange:e=>setBis(e.target.value)})
-          ),
-          React.createElement("div",{className:"flex gap-2 mb-2"},
-            [1,2,3,4].map(w=>React.createElement("button",{key:w,className:"btn",onClick:()=>setWeeks(w)},w+" Wochen"))
-          )
-        ),
-        React.createElement("div",{className:"border-t pt-2 mt-2 grid grid-cols-2 gap-2"},
-          React.createElement("div",null,
-            React.createElement("div",{className:"mb-1",style:{fontWeight:600}},"Zu listende Datenfelder"),
-            ["nummer","art","stallnr","gruppe"].map(k=>
-              React.createElement("label",{key:k,style:{display:"block"}},
-                React.createElement("input",{type:"checkbox",className:"mr-1",checked:felder[k],onChange:e=>setFelder({...felder,[k]:e.target.checked})}),
-                k==="nummer"?"Nummer":k==="art"?"Art":k==="stallnr"?"Stallnr":"Gruppe"
-              )
-            )
-          ),
-          React.createElement("div",null,
-            React.createElement("div",{className:"mb-1",style:{fontWeight:600}},"Sortierung nach..."),
-            React.createElement("label",{style:{display:"block"}},
-              React.createElement("input",{type:"radio",name:"sort",className:"mr-1",checked:sort==="nummer",onChange:()=>setSort("nummer")}),
-              "Nummer"
-            ),
-            React.createElement("label",{style:{display:"block"}},
-              React.createElement("input",{type:"radio",name:"sort",className:"mr-1",checked:sort==="art_nummer",onChange:()=>setSort("art_nummer")}),
-              "Art und Nummer"
-            ),
-            React.createElement("label",{style:{display:"block"}},
-              React.createElement("input",{type:"radio",name:"sort",className:"mr-1",checked:sort==="stallnr_nummer",onChange:()=>setSort("stallnr_nummer")}),
-              "Stallnr und Nummer"
-            ),
-            React.createElement("label",{style:{display:"block"}},
-              React.createElement("input",{type:"radio",name:"sort",className:"mr-1",checked:sort==="gruppe_nummer",onChange:()=>setSort("gruppe_nummer")}),
-              "Gruppe und Nummer"
-            )
-          )
-        ),
-        React.createElement("div",{className:"border-t pt-2 mt-2 space-y-1"},
-          React.createElement("label",null,
-            React.createElement("input",{type:"checkbox",className:"mr-1",checked:nurSauen,onChange:e=>setNurSauen(e.target.checked)}),
-            "Nur Sauen berücksichtigen"
-          ),
-          React.createElement("label",null,
-            React.createElement("input",{type:"checkbox",className:"mr-1",checked:wartezeit,onChange:e=>setWartezeit(e.target.checked)}),
-            "Wartezeit (Fleischverkauf) listen"
-          ),
-          React.createElement("div",{className:"muted mt-1"},"X = Anzeige bei vorhandenem Termin (nur tabellarische Liste)"),
-          React.createElement("div",{className:"muted"},"= Anzeige bei freiem Termin (nur tabellarische Liste)")
-        ),
-        React.createElement("div",{className:"border-t pt-2 mt-3 flex flex-wrap gap-2"},
-          React.createElement("button",{className:"btn"},"Arbeitsplan-Optionen"),
-          React.createElement("button",{className:"btn"},"Hilfe"),
-          React.createElement("button",{className:"btn",onClick:()=>exportArbeitsplanPdf(termine,felder,sortLabelMap[sort],von,bis)},"Tabellarische Liste"),
-          React.createElement("button",{className:"btn"},"Schließen")
-        )
-      )
-    ),
-    React.createElement("div",{className:"md:col-span-3 card"},
-      React.createElement("div",{className:"card-header"},"Tabellarische Liste – Vorschau"),
-      React.createElement("div",{className:"card-body",style:{overflow:"auto"}},
-        termine.length===0 ? React.createElement("div",{className:"muted"},"Keine Termine im gewählten Zeitraum.") :
-        React.createElement("table",{className:"min-w-full text-xs"},
-          React.createElement("thead",null,
-            React.createElement("tr",{style:{textAlign:"left"}},
-              React.createElement("th",null,"Vom"),
-              React.createElement("th",null,"Bis"),
-              React.createElement("th",null,"Termin"),
-              felder.nummer && React.createElement("th",null,"Nummer"),
-              felder.art && React.createElement("th",null,"Art"),
-              felder.stallnr && React.createElement("th",null,"Stallnr"),
-              felder.gruppe && React.createElement("th",null,"Gruppe")
-            )
-          ),
-          React.createElement("tbody",null,
-            vorschau.map((r,i)=>React.createElement("tr",{key:i,style:{borderTop:"1px solid #e2e8f0"}},
-              React.createElement("td",null,r.vom),
-              React.createElement("td",null,r.bis),
-              React.createElement("td",null,r.termin),
-              felder.nummer && React.createElement("td",null,r.nummer),
-              felder.art && React.createElement("td",null,r.art),
-              felder.stallnr && React.createElement("td",null,r.stallnr),
-              felder.gruppe && React.createElement("td",null,r.gruppe)
-            ))
-          )
-        )
-      )
-    )
-  );
-}
-
-/* ---------- Status / Bestände / Statistik / Wartezeiten ---------- */
-function StatusTabs({tiere}){
-  const [reg,setReg] = useState("TRAGEND");
-  const map = {TRAGEND:"Tragend",SAEUGEND:"Säugend",GUEST:"Güst"};
-  const list = tiere.filter(t=>t.status===map[reg]);
-  return React.createElement("div",null,
-    React.createElement("div",{className:"flex gap-2 mb-3"},
-      ["TRAGEND","SAEUGEND","GUEST"].map(k=>
-        React.createElement("div",{key:k,onClick:()=>setReg(k),className:"tab "+(reg===k?"tab-active":"")},k)
-      )
-    ),
-    React.createElement("div",{className:"card"},
-      React.createElement("div",{className:"card-header"},"Status: ",map[reg]),
-      React.createElement("div",{className:"card-body",style:{overflow:"auto"}},
-        React.createElement("table",{className:"min-w-full text-xs"},
-          React.createElement("thead",null,
-            React.createElement("tr",{style:{textAlign:"left"}},
-              ["Nummer","Gruppe","Stall","Wurfnr","Letzte Ereignisse","Tage bis Termin"].map(h=>React.createElement("th",{key:h},h))
-            )
-          ),
-          React.createElement("tbody",null,
-            list.map(t=>React.createElement("tr",{key:t.id,style:{borderTop:"1px solid #e2e8f0"}},
-              React.createElement("td",null,t.nummer),
-              React.createElement("td",null,t.gruppe),
-              React.createElement("td",null,t.stallnr),
-              React.createElement("td",null,Math.floor(Math.random()*6)+1),
-              React.createElement("td",null,"—"),
-              React.createElement("td",null,Math.floor(Math.random()*30))
-            ))
-          )
-        )
-      )
-    )
-  );
-}
-
-function Bestaende({tiere}){
-  function group(arr,getKey){ const r={}; arr.forEach(t=>{const k=getKey(t); r[k]=(r[k]||0)+1;}); return r; }
-  const nachArt = group(tiere,t=>t.art);
-  const nachGruppe = group(tiere,t=>t.gruppe);
-  const nachStall = group(tiere,t=>t.stallnr);
-  return React.createElement("div",{className:"grid md:grid-cols-2 gap-4"},
-    React.createElement("div",{className:"card"},
-      React.createElement("div",{className:"card-header"},"Zu listende Datenfelder"),
-      React.createElement("div",{className:"card-body space-y-2"},
-        ["Art","Nummer","Stallnummer","Alter (Jahre)"].map(x=>React.createElement("div",{key:x},React.createElement("span",{className:"chip"},x))),
-        React.createElement("div",null,
-          React.createElement("button",{className:"btn"},"Listen"),
-          React.createElement("button",{className:"btn",style:{marginLeft:"0.5rem"}},"Gesamtübersicht Stückzahlen")
-        )
-      )
-    ),
-    React.createElement("div",{className:"card"},
-      React.createElement("div",{className:"card-header"},"Stückzahlen (aktuelle Auswahl)"),
-      React.createElement("div",{className:"card-body grid grid-cols-3 gap-3 text-xs"},
-        React.createElement("div",null,
-          React.createElement("div",{className:"muted"},"nach Art"),
-          Object.entries(nachArt).map(([k,v])=>React.createElement("div",{key:k,style:{display:"flex",justifyContent:"space-between"}},React.createElement("span",null,k),React.createElement("b",null,v)))
-        ),
-        React.createElement("div",null,
-          React.createElement("div",{className:"muted"},"nach Gruppe"),
-          Object.entries(nachGruppe).map(([k,v])=>React.createElement("div",{key:k,style:{display:"flex",justifyContent:"space-between"}},React.createElement("span",null,k),React.createElement("b",null,v)))
-        ),
-        React.createElement("div",null,
-          React.createElement("div",{className:"muted"},"nach Stall"),
-          Object.entries(nachStall).map(([k,v])=>React.createElement("div",{key:k,style:{display:"flex",justifyContent:"space-between"}},React.createElement("span",null,"#",k),React.createElement("b",null,v)))
-        )
-      )
-    )
-  );
-}
-
-function Statistik({tiere}){
-  const sauen = tiere.filter(t=>t.art===ART.SAU);
-  const felder = [
-    {label:"Ø Tragdauer (Tage)", value:115},
-    {label:"Ø Säugedauer (Tage)", value:28},
-    {label:"Ø Güstdauer (Tage)", value:7},
-    {label:"Ø Ferkel je Wurf", value:12.4},
-    {label:"Sauen gesamt", value:sauen.length}
-  ];
-  const eintraege = [];
-  tiere.forEach(function(t){
-    (t.bewegungen.ferkelBehandlungen || []).forEach(function(b){
-      eintraege.push({sau:t.nummer,datum:b.datum,typ:b.typ,detailsText:b.details && b.details.details ? b.details.details : ""});
-    });
-  });
-  const erste = eintraege.slice(0,10);
-  return React.createElement("div",{className:"grid md:grid-cols-2 gap-4"},
-    React.createElement("div",{className:"card"},
-      React.createElement("div",{className:"card-header"},"Kennzahlen (Demo)"),
-      React.createElement("div",{className:"card-body grid grid-cols-2 gap-3 text-xs"},
-        felder.map(f=>React.createElement("div",{key:f.label,className:"card",style:{padding:"0.5rem"}},
-          React.createElement("div",{className:"muted"},f.label),
-          React.createElement("div",{style:{fontWeight:600,fontSize:"1.1rem"}}, typeof f.value==="number"?f.value.toFixed(2):f.value)
-        ))
-      )
-    ),
-    React.createElement("div",{className:"card"},
-      React.createElement("div",{className:"card-header flex justify-between items-center"},
-        React.createElement("span",null,"Ferkelbehandlungen – Auswertung"),
-        React.createElement("button",{className:"btn",onClick:()=>exportFerkelbehandlungPdf(eintraege)},"Als PDF exportieren")
-      ),
-      React.createElement("div",{className:"card-body text-xs space-y-2"},
-        eintraege.length===0 ? React.createElement("div",{className:"muted"},"Noch keine Ferkelbehandlungen erfasst.") :
-        React.createElement("div",null,
-          React.createElement("div",{className:"muted mb-1"},"Vorschau (erste ",erste.length," Einträge)"),
-          React.createElement("table",{className:"min-w-full text-[11px]"},
-            React.createElement("thead",null,
-              React.createElement("tr",{style:{textAlign:"left"}},
-                ["Datum","Sau","Typ","Details"].map(h=>React.createElement("th",{key:h},h))
-              )
-            ),
-            React.createElement("tbody",null,
-              erste.map((r,idx)=>React.createElement("tr",{key:idx,style:{borderTop:"1px solid #e2e8f0"}},
-                React.createElement("td",null,r.datum||""),
-                React.createElement("td",null,r.sau||""),
-                React.createElement("td",null,r.typ||""),
-                React.createElement("td",null,r.detailsText||"")
-              ))
-            )
-          )
-        )
-      )
-    )
-  );
-}
-
-function Wartezeiten({tiere}){
-  function plusTage(d){ const x=new Date(); x.setDate(x.getDate()+d); return x; }
-  const list = tiere.filter(t=>t.art===ART.SAU).filter((_,i)=>i%5===0).map(t=>{
-    const d = 10 + (t.id.charCodeAt(0)%20);
-    const until = plusTage(d);
-    return { tier:t.art+" "+t.nummer, sperreBis:until.toISOString().slice(0,10), tage:d };
-  });
-  return React.createElement("div",{className:"card"},
-    React.createElement("div",{className:"card-header"},"Wartezeiten (Sperre bis)"),
-    React.createElement("div",{className:"card-body"},
-      list.length===0 ? React.createElement("div",{className:"muted"},"Zur Zeit keine Wartezeiten.") :
-      React.createElement("table",{className:"min-w-full text-xs"},
-        React.createElement("thead",null,
-          React.createElement("tr",{style:{textAlign:"left"}},
-            ["Tier","Sperre bis","Tage"].map(h=>React.createElement("th",{key:h},h))
-          )
-        ),
-        React.createElement("tbody",null,
-          list.map((r,i)=>React.createElement("tr",{key:i,style:{borderTop:"1px solid #e2e8f0"}},
-            React.createElement("td",null,r.tier),
-            React.createElement("td",null,r.sperreBis),
-            React.createElement("td",null,r.tage)
-          ))
-        )
-      )
-    )
-  );
-}
-
-/* ---------- Tier-Dialog ---------- */
-function AnimalDialog(props){
-  const {animalForm,setAnimalForm,animalDialog,onSave,onClose,tiere} = props;
-  function setF(key,val){ setAnimalForm(prev=>({...prev,[key]:val})); }
-  const t = animalDialog.tier;
-  const mov = t && t.bewegungen ? t.bewegungen : {belegungen:[],ferkelungen:[],absetzungen:[],traechPruefungen:[]};
-  const anzahlBeleg = (mov.belegungen||[]).length;
-  const anzahlFerkelungen = (mov.ferkelungen||[]).length;
-  let ferkelGesamt = 0, ferkelLebend=0;
-  (mov.ferkelungen||[]).forEach(f=>{ ferkelGesamt += (f.lebend||0)+(f.tot||0); ferkelLebend += (f.lebend||0); });
-  const letzte = arr => (arr && arr.length ? arr[arr.length-1].datum : "");
-  const letzteBelegung = letzte(mov.belegungen);
-  const letzteFerkelung = letzte(mov.ferkelungen);
-  const letzteTraecht = letzte(mov.traechPruefungen);
-  const letzteAbsetzung = letzte(mov.absetzungen);
-  return React.createElement("div",{className:"fixed inset-0 bg-black/40 flex items-center justify-center z-50"},
-    React.createElement("div",{className:"bg-[#fffbe6] rounded-xl shadow-2xl max-w-5xl w-full mx-4"},
-      React.createElement("div",{className:"px-4 py-2 border-b flex justify-between items-center bg-amber-100 rounded-t-xl"},
-        React.createElement("div",{className:"font-semibold text-sm"},"Schweine (Sauen/Eber) eingeben / ändern – ",animalDialog.mode==="new"?"Neuanlage":"Bearbeiten"),
-        React.createElement("button",{className:"btn",onClick:onClose},"X")
-      ),
-      React.createElement("div",{className:"p-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs"},
-        React.createElement("div",{className:"md:col-span-2 space-y-3"},
-          React.createElement("div",{className:"border border-amber-300 rounded-lg p-2 bg-amber-50"},
-            React.createElement("div",{className:"font-semibold mb-1 text-[11px]"},"Tierdaten"),
-            React.createElement("div",{className:"grid grid-cols-2 gap-2"},
-              React.createElement("div",null,
-                React.createElement("label",{className:"muted"},"Art"),
-                React.createElement("select",{className:"select",value:animalForm.art,onChange:e=>setF("art",e.target.value)},
-                  React.createElement("option",{value:"Sau"},"Sau"),
-                  React.createElement("option",{value:"Eber"},"Eber")
-                )
-              ),
-              React.createElement("div",null,
-                React.createElement("label",{className:"muted"},"Sau-/Tiernummer"),
-                React.createElement("input",{className:"input",value:animalForm.nummer,onChange:e=>setF("nummer",e.target.value)})
-              ),
-              React.createElement("div",null,
-                React.createElement("label",{className:"muted"},"Gruppe"),
-                React.createElement("select",{className:"select",value:animalForm.gruppe,onChange:e=>setF("gruppe",e.target.value)},
-                  React.createElement("option",{value:"Zuchtsau"},"Zuchtsau"),
-                  React.createElement("option",{value:"Jungsau"},"Jungsau"),
-                  React.createElement("option",{value:"Eber"},"Eber")
-                )
-              ),
-              React.createElement("div",null,
-                React.createElement("label",{className:"muted"},"Stallnr / Box"),
-                React.createElement("input",{className:"input",value:animalForm.stallnr,onChange:e=>setF("stallnr",e.target.value)})
-              ),
-              React.createElement("div",null,
-                React.createElement("label",{className:"muted"},"Ohrmarke"),
-                React.createElement("input",{className:"input",value:animalForm.ohrmarke,onChange:e=>setF("ohrmarke",e.target.value)})
-              ),
-              React.createElement("div",null,
-                React.createElement("label",{className:"muted"},"Tätowierung-Nr."),
-                React.createElement("input",{className:"input",value:animalForm.taetowierung,onChange:e=>setF("taetowierung",e.target.value)})
-              ),
-              React.createElement("div",null,
-                React.createElement("label",{className:"muted"},"Geburtsdatum"),
-                React.createElement("input",{type:"date",className:"input",value:animalForm.geburtsdatum,onChange:e=>setF("geburtsdatum",e.target.value)})
-              ),
-              React.createElement("div",null,
-                React.createElement("label",{className:"muted"},"Rasse"),
-                React.createElement("input",{className:"input",value:animalForm.rasse,onChange:e=>setF("rasse",e.target.value)})
-              ),
-              React.createElement("div",{className:"col-span-2"},
-                React.createElement("label",{className:"muted"},"Bemerkungen"),
-                React.createElement("input",{className:"input",value:animalForm.bemerkungen,onChange:e=>setF("bemerkungen",e.target.value)})
-              ),
-              React.createElement("div",{className:"col-span-2 flex items-center gap-2 mt-1"},
-                React.createElement("input",{type:"checkbox",checked:animalForm.statusIgnorieren,onChange:e=>setF("statusIgnorieren",e.target.checked)}),
-                React.createElement("span",{className:"muted"},"Status ignorieren (nur aktivieren, wenn Sau nicht mehr belegt wird)")
-              )
-            )
-          ),
-          React.createElement("div",{className:"grid grid-cols-2 gap-3"},
-            React.createElement("div",{className:"border border-amber-300 rounded-lg p-2 bg-amber-50"},
-              React.createElement("div",{className:"font-semibold mb-1 text-[11px]"},"Zugangsdaten"),
-              React.createElement("div",{className:"space-y-1"},
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Zugangsdatum"),
-                  React.createElement("input",{type:"date",className:"input",value:animalForm.zugangsdatum,onChange:e=>setF("zugangsdatum",e.target.value)})
-                ),
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Zugangsgewicht (kg)"),
-                  React.createElement("input",{type:"number",className:"input",value:animalForm.zugangsgewicht,onChange:e=>setF("zugangsgewicht",e.target.value)})
-                ),
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Einkaufspreis (€)"),
-                  React.createElement("input",{type:"number",className:"input",value:animalForm.einkaufspreis,onChange:e=>setF("einkaufspreis",e.target.value)})
-                ),
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Zugangsgrund"),
-                  React.createElement("input",{className:"input",value:animalForm.zugangsgrund,onChange:e=>setF("zugangsgrund",e.target.value)})
-                ),
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Lieferant"),
-                  React.createElement("input",{className:"input",value:animalForm.lieferant,onChange:e=>setF("lieferant",e.target.value)})
-                )
-              )
-            ),
-            React.createElement("div",{className:"border border-amber-300 rounded-lg p-2 bg-amber-50"},
-              React.createElement("div",{className:"font-semibold mb-1 text-[11px]"},"Abgangsdaten"),
-              React.createElement("div",{className:"space-y-1"},
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Abgangsdatum"),
-                  React.createElement("input",{type:"date",className:"input",value:animalForm.abgangsdatum,onChange:e=>setF("abgangsdatum",e.target.value)})
-                ),
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Abgangsgewicht (kg)"),
-                  React.createElement("input",{type:"number",className:"input",value:animalForm.abgangsgewicht,onChange:e=>setF("abgangsgewicht",e.target.value)})
-                ),
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Verkaufspreis (€)"),
-                  React.createElement("input",{type:"number",className:"input",value:animalForm.verkaufspreis,onChange:e=>setF("verkaufspreis",e.target.value)})
-                ),
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Abgangsgrund"),
-                  React.createElement("input",{className:"input",value:animalForm.abgangsgrund,onChange:e=>setF("abgangsgrund",e.target.value)})
-                ),
-                React.createElement("div",null,
-                  React.createElement("label",{className:"muted"},"Abnehmer"),
-                  React.createElement("input",{className:"input",value:animalForm.abnehmer,onChange:e=>setF("abnehmer",e.target.value)})
-                )
-              )
-            )
-          )
-        ),
-        React.createElement("div",{className:"border border-amber-300 rounded-lg p-2 bg-amber-50"},
-          React.createElement("div",{className:"font-semibold mb-1 text-[11px]"},"Tier-Informationen"),
-          React.createElement("div",{className:"grid grid-cols-2 gap-2 text-[11px]"},
-            React.createElement("div",null,"Anzahl Belegungen: ",anzahlBeleg),
-            React.createElement("div",null,"Anzahl Ferkelungen: ",anzahlFerkelungen),
-            React.createElement("div",null,"Anzahl Ferkel gesamt: ",ferkelGesamt),
-            React.createElement("div",null,"Anzahl Ferkel lebend: ",ferkelLebend),
-            React.createElement("div",null,"Letzte Belegung: ",letzteBelegung||"-"),
-            React.createElement("div",null,"Letzte Ferkelung: ",letzteFerkelung||"-"),
-            React.createElement("div",null,"Letzte Trächtigkeit: ",letzteTraecht||"-"),
-            React.createElement("div",null,"Letzte Absetzung: ",letzteAbsetzung||"-"),
-            React.createElement("div",null,"Nächste Belegung: ","—"),
-            React.createElement("div",null,"Nächste Ferkelung: ","—")
-          )
-        )
-      ),
-      React.createElement("div",{className:"px-4 py-2 border-t bg-amber-100 rounded-b-xl flex justify-between items-center"},
-        React.createElement("button",{className:"btn",onClick:onClose},"Abbrechen"),
-        React.createElement("button",{className:"btn",onClick:onSave},"OK")
-      )
-    )
-  );
-}
-
-/* ---------- App mounten ---------- */
+// React rendern
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(React.createElement(App));
+
 </script>
+
 </body>
 </html>
-
