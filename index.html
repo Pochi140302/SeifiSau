@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="de">
 <head>
@@ -174,12 +175,19 @@ function initialAnimals(){
   return list;
 }
 
+/* ROBUSTER: berücksichtigt fehlende bewegungen */
 function latestRefDate(t, bezug){
-  const b = t.bewegungen;
-  const pickLast=(arr,key)=>arr && arr.length? new Date(arr[arr.length-1][key]):null;
-  if(bezug==="Absetzen") return pickLast(b.absetzungen,"datum");
-  if(bezug==="Belegung") return pickLast(b.belegungen,"datum");
-  if(bezug==="Ferkelung") return pickLast(b.ferkelungen,"datum");
+  const b = t.bewegungen || {
+    belegungen: [],
+    ferkelungen: [],
+    absetzungen: []
+  };
+  const pickLast = (arr, key) =>
+    Array.isArray(arr) && arr.length ? new Date(arr[arr.length - 1][key]) : null;
+
+  if(bezug==="Absetzen")  return pickLast(b.absetzungen, "datum");
+  if(bezug==="Belegung")  return pickLast(b.belegungen, "datum");
+  if(bezug==="Ferkelung") return pickLast(b.ferkelungen, "datum");
   return null;
 }
 
@@ -362,7 +370,7 @@ function App(){
     URL.revokeObjectURL(url);
   }
 
-  // <<< NEU: JSON-Import >>>
+  // JSON-Import ROBUSTER gemacht
   function importJson(){
     const input = document.createElement("input");
     input.type = "file";
@@ -389,7 +397,27 @@ function App(){
             return;
           }
 
-          setTiere(neueTiere);
+          // Normalisierung: fehlende Felder auffüllen, IDs & Bewegungen absichern
+          const normalized = neueTiere.map((t, idx) => {
+            const bewegungen = t.bewegungen || {};
+            return {
+              ...t,
+              id: t.id || (uid() + "_" + idx),
+              art: t.art === ART.EBER ? ART.EBER : ART.SAU,
+              status: t.status || STATUS.GUEST,
+              bewegungen: {
+                zukauf: Array.isArray(bewegungen.zukauf) ? bewegungen.zukauf : [],
+                belegungen: Array.isArray(bewegungen.belegungen) ? bewegungen.belegungen : [],
+                traechPruefungen: Array.isArray(bewegungen.traechPruefungen) ? bewegungen.traechPruefungen : [],
+                stallwechsel: Array.isArray(bewegungen.stallwechsel) ? bewegungen.stallwechsel : [],
+                ferkelungen: Array.isArray(bewegungen.ferkelungen) ? bewegungen.ferkelungen : [],
+                ferkelBehandlungen: Array.isArray(bewegungen.ferkelBehandlungen) ? bewegungen.ferkelBehandlungen : [],
+                absetzungen: Array.isArray(bewegungen.absetzungen) ? bewegungen.absetzungen : []
+              }
+            };
+          });
+
+          setTiere(normalized);
           setMarkiert([]);
           alert("Bestand wurde erfolgreich aus der Datei geladen.");
         } catch (err) {
@@ -403,7 +431,6 @@ function App(){
 
     input.click();
   }
-  // >>> ENDE NEU
 
   function resetData(){
     if(!confirm("Wirklich alle Daten löschen und mit Demo-Bestand neu starten?")) return;
@@ -1009,12 +1036,23 @@ function Statistik({tiere}){
     {label:"Ø Ferkel je Wurf", value:12.4},
     {label:"Sauen gesamt", value:sauen.length}
   ];
+
+  // ROBUST: Bewegungen können fehlen / null sein
   const eintraege = [];
   tiere.forEach(function(t){
-    (t.bewegungen.ferkelBehandlungen || []).forEach(function(b){
-      eintraege.push({sau:t.nummer,datum:b.datum,typ:b.typ,detailsText:b.details && b.details.details ? b.details.details : ""});
+    const bev = t.bewegungen && Array.isArray(t.bewegungen.ferkelBehandlungen)
+      ? t.bewegungen.ferkelBehandlungen
+      : [];
+    bev.forEach(function(b){
+      eintraege.push({
+        sau: t.nummer,
+        datum: b.datum,
+        typ: b.typ,
+        detailsText: b.details && b.details.details ? b.details.details : ""
+      });
     });
   });
+
   const erste = eintraege.slice(0,10);
   return React.createElement("div",{className:"grid md:grid-cols-2 gap-4"},
     React.createElement("div",{className:"card"},
@@ -1243,5 +1281,6 @@ root.render(React.createElement(App));
 </script>
 </body>
 </html>
+
 
 
