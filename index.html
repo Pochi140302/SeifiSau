@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="de">
 <head>
@@ -175,6 +174,28 @@ function initialAnimals(){
   return list;
 }
 
+/* Normalisierung von Tierdaten (für Import & Laden) */
+function normalizeTiere(list){
+  return (list || []).map((t, idx) => {
+    const bev = t.bewegungen || {};
+    return {
+      ...t,
+      id: t.id || (uid() + "_" + idx),
+      art: t.art === ART.EBER ? ART.EBER : ART.SAU,
+      status: t.status || STATUS.GUEST,
+      bewegungen: {
+        zukauf: Array.isArray(bev.zukauf) ? bev.zukauf : [],
+        belegungen: Array.isArray(bev.belegungen) ? bev.belegungen : [],
+        traechPruefungen: Array.isArray(bev.traechPruefungen) ? bev.traechPruefungen : [],
+        stallwechsel: Array.isArray(bev.stallwechsel) ? bev.stallwechsel : [],
+        ferkelungen: Array.isArray(bev.ferkelungen) ? bev.ferkelungen : [],
+        ferkelBehandlungen: Array.isArray(bev.ferkelBehandlungen) ? bev.ferkelBehandlungen : [],
+        absetzungen: Array.isArray(bev.absetzungen) ? bev.absetzungen : []
+      }
+    };
+  });
+}
+
 /* ROBUSTER: berücksichtigt fehlende bewegungen */
 function latestRefDate(t, bezug){
   const b = t.bewegungen || {
@@ -198,12 +219,14 @@ function App(){
     try{
       const stored = localStorage.getItem(STORAGE_KEY);
       if(stored){
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return normalizeTiere(parsed);
+        if (parsed && Array.isArray(parsed.tiere)) return normalizeTiere(parsed.tiere);
       }
     }catch(e){
       console.error("Konnte gespeicherte Daten nicht laden:", e);
     }
-    return initialAnimals();
+    return normalizeTiere(initialAnimals());
   });
 
   // Alle Änderungen automatisch im Browser speichern
@@ -397,26 +420,7 @@ function App(){
             return;
           }
 
-          // Normalisierung: fehlende Felder auffüllen, IDs & Bewegungen absichern
-          const normalized = neueTiere.map((t, idx) => {
-            const bewegungen = t.bewegungen || {};
-            return {
-              ...t,
-              id: t.id || (uid() + "_" + idx),
-              art: t.art === ART.EBER ? ART.EBER : ART.SAU,
-              status: t.status || STATUS.GUEST,
-              bewegungen: {
-                zukauf: Array.isArray(bewegungen.zukauf) ? bewegungen.zukauf : [],
-                belegungen: Array.isArray(bewegungen.belegungen) ? bewegungen.belegungen : [],
-                traechPruefungen: Array.isArray(bewegungen.traechPruefungen) ? bewegungen.traechPruefungen : [],
-                stallwechsel: Array.isArray(bewegungen.stallwechsel) ? bewegungen.stallwechsel : [],
-                ferkelungen: Array.isArray(bewegungen.ferkelungen) ? bewegungen.ferkelungen : [],
-                ferkelBehandlungen: Array.isArray(bewegungen.ferkelBehandlungen) ? bewegungen.ferkelBehandlungen : [],
-                absetzungen: Array.isArray(bewegungen.absetzungen) ? bewegungen.absetzungen : []
-              }
-            };
-          });
-
+          const normalized = normalizeTiere(neueTiere);
           setTiere(normalized);
           setMarkiert([]);
           alert("Bestand wurde erfolgreich aus der Datei geladen.");
@@ -435,7 +439,7 @@ function App(){
   function resetData(){
     if(!confirm("Wirklich alle Daten löschen und mit Demo-Bestand neu starten?")) return;
     try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
-    setTiere(initialAnimals());
+    setTiere(normalizeTiere(initialAnimals()));
     setMarkiert([]);
   }
 
@@ -594,14 +598,40 @@ function MovementEntry({markiert,setTiere}){
     });
   }
 
+  // WICHTIG: Bewegungs-Arrays vorher sicherstellen,
+  // sonst wird beim Speichern nichts geschrieben.
   function apply(mut){
-    if(markiert.length===0) return;
-    setTiere(prev=>prev.map(t=>{
-      if(!markiert.includes(t.id)) return t;
-      const copy = JSON.parse(JSON.stringify(t));
-      mut(copy);
-      return copy;
-    }));
+    if (markiert.length === 0) return;
+    setTiere(prev =>
+      prev.map(t => {
+        if (!markiert.includes(t.id)) return t;
+
+        const copy = JSON.parse(JSON.stringify(t));
+
+        if (!copy.bewegungen) {
+          copy.bewegungen = {
+            zukauf: [],
+            belegungen: [],
+            traechPruefungen: [],
+            stallwechsel: [],
+            ferkelungen: [],
+            ferkelBehandlungen: [],
+            absetzungen: []
+          };
+        } else {
+          copy.bewegungen.zukauf            = Array.isArray(copy.bewegungen.zukauf) ? copy.bewegungen.zukauf : [];
+          copy.bewegungen.belegungen        = Array.isArray(copy.bewegungen.belegungen) ? copy.bewegungen.belegungen : [];
+          copy.bewegungen.traechPruefungen  = Array.isArray(copy.bewegungen.traechPruefungen) ? copy.bewegungen.traechPruefungen : [];
+          copy.bewegungen.stallwechsel      = Array.isArray(copy.bewegungen.stallwechsel) ? copy.bewegungen.stallwechsel : [];
+          copy.bewegungen.ferkelungen       = Array.isArray(copy.bewegungen.ferkelungen) ? copy.bewegungen.ferkelungen : [];
+          copy.bewegungen.ferkelBehandlungen= Array.isArray(copy.bewegungen.ferkelBehandlungen) ? copy.bewegungen.ferkelBehandlungen : [];
+          copy.bewegungen.absetzungen       = Array.isArray(copy.bewegungen.absetzungen) ? copy.bewegungen.absetzungen : [];
+        }
+
+        mut(copy);
+        return copy;
+      })
+    );
   }
 
   function save(){
@@ -1281,6 +1311,7 @@ root.render(React.createElement(App));
 </script>
 </body>
 </html>
+
 
 
 
