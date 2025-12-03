@@ -196,7 +196,7 @@ function normalizeTiere(list){
   });
 }
 
-/* ROBUSTER: berücksichtigt fehlende bewegungen */
+/* sicherer latestRefDate */
 function latestRefDate(t, bezug){
   const b = t.bewegungen || {
     belegungen: [],
@@ -214,7 +214,7 @@ function latestRefDate(t, bezug){
 
 /* ---------- Haupt-App ---------- */
 function App(){
-  // Tiere beim Start laden: zuerst aus localStorage, sonst Demo-Bestand
+  // Tiere beim Start laden
   const [tiere,setTiere] = useState(() => {
     try{
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -229,7 +229,7 @@ function App(){
     return normalizeTiere(initialAnimals());
   });
 
-  // Alle Änderungen automatisch im Browser speichern
+  // Änderungen speichern
   useEffect(() => {
     try{
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tiere));
@@ -393,7 +393,7 @@ function App(){
     URL.revokeObjectURL(url);
   }
 
-  // JSON-Import ROBUSTER gemacht
+  // JSON-Import
   function importJson(){
     const input = document.createElement("input");
     input.type = "file";
@@ -410,7 +410,6 @@ function App(){
           const data = JSON.parse(text);
 
           let neueTiere;
-          // Unterstützt sowohl { "tiere": [...] } als auch direkt ein Array [...]
           if (Array.isArray(data)) {
             neueTiere = data;
           } else if (data && Array.isArray(data.tiere)) {
@@ -598,8 +597,7 @@ function MovementEntry({markiert,setTiere}){
     });
   }
 
-  // WICHTIG: Bewegungs-Arrays vorher sicherstellen,
-  // sonst wird beim Speichern nichts geschrieben.
+  // Bewegungen robust anlegen
   function apply(mut){
     if (markiert.length === 0) return;
     setTiere(prev =>
@@ -619,13 +617,13 @@ function MovementEntry({markiert,setTiere}){
             absetzungen: []
           };
         } else {
-          copy.bewegungen.zukauf            = Array.isArray(copy.bewegungen.zukauf) ? copy.bewegungen.zukauf : [];
-          copy.bewegungen.belegungen        = Array.isArray(copy.bewegungen.belegungen) ? copy.bewegungen.belegungen : [];
-          copy.bewegungen.traechPruefungen  = Array.isArray(copy.bewegungen.traechPruefungen) ? copy.bewegungen.traechPruefungen : [];
-          copy.bewegungen.stallwechsel      = Array.isArray(copy.bewegungen.stallwechsel) ? copy.bewegungen.stallwechsel : [];
-          copy.bewegungen.ferkelungen       = Array.isArray(copy.bewegungen.ferkelungen) ? copy.bewegungen.ferkelungen : [];
-          copy.bewegungen.ferkelBehandlungen= Array.isArray(copy.bewegungen.ferkelBehandlungen) ? copy.bewegungen.ferkelBehandlungen : [];
-          copy.bewegungen.absetzungen       = Array.isArray(copy.bewegungen.absetzungen) ? copy.bewegungen.absetzungen : [];
+          copy.bewegungen.zukauf             = Array.isArray(copy.bewegungen.zukauf) ? copy.bewegungen.zukauf : [];
+          copy.bewegungen.belegungen         = Array.isArray(copy.bewegungen.belegungen) ? copy.bewegungen.belegungen : [];
+          copy.bewegungen.traechPruefungen   = Array.isArray(copy.bewegungen.traechPruefungen) ? copy.bewegungen.traechPruefungen : [];
+          copy.bewegungen.stallwechsel       = Array.isArray(copy.bewegungen.stallwechsel) ? copy.bewegungen.stallwechsel : [];
+          copy.bewegungen.ferkelungen        = Array.isArray(copy.bewegungen.ferkelungen) ? copy.bewegungen.ferkelungen : [];
+          copy.bewegungen.ferkelBehandlungen = Array.isArray(copy.bewegungen.ferkelBehandlungen) ? copy.bewegungen.ferkelBehandlungen : [];
+          copy.bewegungen.absetzungen        = Array.isArray(copy.bewegungen.absetzungen) ? copy.bewegungen.absetzungen : [];
         }
 
         mut(copy);
@@ -987,17 +985,103 @@ function Arbeitsplan({tiere}){
 
 /* ---------- Status / Bestände / Statistik / Wartezeiten ---------- */
 function StatusTabs({tiere}){
-  const [reg,setReg] = useState("TRAGEND");
-  const map = {TRAGEND:"Tragend",SAEUGEND:"Säugend",GUEST:"Güst"};
-  const list = tiere.filter(t=>t.status===map[reg]);
+  const [reg,setReg] = useState("TRAGEND"); // TRAGEND / SAEUGEND / GUEST
+
+  const getLast = arr => (arr && arr.length ? arr[arr.length-1] : null);
+
+  // Status aus Bewegungen berechnen
+  const classified = useMemo(() => {
+    const res = {
+      [STATUS.TRAGEND]: [],
+      [STATUS.SAEUGEND]: [],
+      [STATUS.GUEST]: []
+    };
+
+    tiere.forEach(t => {
+      if (t.art !== ART.SAU) return;          // nur Sauen
+      if (t.statusIgnorieren) return;         // explizit ignorieren
+
+      const bev = t.bewegungen || {};
+      const belegLast = getLast(bev.belegungen);
+      const ferkLast  = getLast(bev.ferkelungen);
+      const absLast   = getLast(bev.absetzungen);
+
+      const dBeleg = belegLast ? new Date(belegLast.datum) : null;
+      const dFerk  = ferkLast  ? new Date(ferkLast.datum)  : null;
+      const dAbs   = absLast   ? new Date(absLast.datum)   : null;
+
+      let status = STATUS.GUEST;
+
+      // Säugend: letzte Ferkelung >= letzte Absetzung
+      if (dFerk && (!dAbs || dFerk >= dAbs)) {
+        status = STATUS.SAEUGEND;
+
+      // Tragend: letzte Belegung liegt nach letzter Ferkelung
+      } else if (dBeleg && (!dFerk || dBeleg > dFerk)) {
+        status = STATUS.TRAGEND;
+      }
+
+      res[status].push(t);
+    });
+
+    return res;
+  }, [tiere]);
+
+  const regStatus =
+    reg === "TRAGEND" ? STATUS.TRAGEND :
+    reg === "SAEUGEND" ? STATUS.SAEUGEND :
+    STATUS.GUEST;
+
+  const list = classified[regStatus] || [];
+  const todayDate = new Date();
+
+  function tageBisTermin(t){
+    const bev = t.bewegungen || {};
+    const last = arr => (arr && arr.length ? arr[arr.length-1] : null);
+
+    if (regStatus === STATUS.TRAGEND) {
+      const beleg = last(bev.belegungen);
+      if (!beleg || !beleg.datum) return "";
+      const soll = new Date(beleg.datum);
+      soll.setDate(soll.getDate() + 115);
+      return Math.round((soll - todayDate) / 86400000);
+    }
+
+    if (regStatus === STATUS.SAEUGEND) {
+      const ferk = last(bev.ferkelungen);
+      if (!ferk || !ferk.datum) return "";
+      const soll = new Date(ferk.datum);
+      soll.setDate(soll.getDate() + 28);
+      return Math.round((soll - todayDate) / 86400000);
+    }
+
+    return "";
+  }
+
+  function letzteEreignisseStr(t){
+    const bev = t.bewegungen || {};
+    const lastDate = arr => (arr && arr.length ? arr[arr.length-1].datum : null);
+    const parts = [];
+    const b = lastDate(bev.belegungen);   if (b) parts.push("Belegung " + b);
+    const f = lastDate(bev.ferkelungen);  if (f) parts.push("Ferkelung " + f);
+    const a = lastDate(bev.absetzungen);  if (a) parts.push("Absetzung " + a);
+    return parts.join(" • ");
+  }
+
   return React.createElement("div",null,
     React.createElement("div",{className:"flex gap-2 mb-3"},
-      ["TRAGEND","SAEUGEND","GUEST"].map(k=>
-        React.createElement("div",{key:k,onClick:()=>setReg(k),className:"tab "+(reg===k?"tab-active":"")},k)
+      ["TRAGEND","SAEUGEND","GUEST"].map(k =>
+        React.createElement("div",{
+            key:k,
+            onClick:()=>setReg(k),
+            className:"tab "+(reg===k?"tab-active":"")
+          },
+          k
+        )
       )
     ),
     React.createElement("div",{className:"card"},
-      React.createElement("div",{className:"card-header"},"Status: ",map[reg]),
+      React.createElement("div",{className:"card-header"},"Status: ",regStatus),
       React.createElement("div",{className:"card-body",style:{overflow:"auto"}},
         React.createElement("table",{className:"min-w-full text-xs"},
           React.createElement("thead",null,
@@ -1006,14 +1090,16 @@ function StatusTabs({tiere}){
             )
           ),
           React.createElement("tbody",null,
-            list.map(t=>React.createElement("tr",{key:t.id,style:{borderTop:"1px solid #e2e8f0"}},
-              React.createElement("td",null,t.nummer),
-              React.createElement("td",null,t.gruppe),
-              React.createElement("td",null,t.stallnr),
-              React.createElement("td",null,Math.floor(Math.random()*6)+1),
-              React.createElement("td",null,"—"),
-              React.createElement("td",null,Math.floor(Math.random()*30))
-            ))
+            list.map(t =>
+              React.createElement("tr",{key:t.id,style:{borderTop:"1px solid #e2e8f0"}},
+                React.createElement("td",null,t.nummer),
+                React.createElement("td",null,t.gruppe),
+                React.createElement("td",null,t.stallnr),
+                React.createElement("td",null,(t.bewegungen && t.bewegungen.ferkelungen ? t.bewegungen.ferkelungen.length : 0)),
+                React.createElement("td",null,letzteEreignisseStr(t) || "—"),
+                React.createElement("td",null,String(tageBisTermin(t) || ""))
+              )
+            )
           )
         )
       )
@@ -1067,7 +1153,6 @@ function Statistik({tiere}){
     {label:"Sauen gesamt", value:sauen.length}
   ];
 
-  // ROBUST: Bewegungen können fehlen / null sein
   const eintraege = [];
   tiere.forEach(function(t){
     const bev = t.bewegungen && Array.isArray(t.bewegungen.ferkelBehandlungen)
@@ -1075,14 +1160,13 @@ function Statistik({tiere}){
       : [];
     bev.forEach(function(b){
       eintraege.push({
-        sau: t.nummer,
-        datum: b.datum,
-        typ: b.typ,
-        detailsText: b.details && b.details.details ? b.details.details : ""
+        sau:t.nummer,
+        datum:b.datum,
+        typ:b.typ,
+        detailsText:b.details && b.details.details ? b.details.details : ""
       });
     });
   });
-
   const erste = eintraege.slice(0,10);
   return React.createElement("div",{className:"grid md:grid-cols-2 gap-4"},
     React.createElement("div",{className:"card"},
@@ -1311,6 +1395,7 @@ root.render(React.createElement(App));
 </script>
 </body>
 </html>
+
 
 
 
